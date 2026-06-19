@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#C9B6E4">
+<title>Mon suivi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F3FB;
+    --ink:#2B2438;
+    --ink-soft:#766C87;
+    --card:#FFFFFF;
+    --weight:#E8628C;
+    --steps:#239E90;
+    --cal-in:#F2994A;
+    --cal-out:#4FA8D8;
+    --deficit:#9B6FD1;
+    --dawn-1:#C9B6E4;
+    --dawn-2:#FFD3B0;
+    --dawn-3:#AEDFF7;
+    --radius:22px;
+    --shadow:0 12px 30px -10px rgba(43,36,56,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Outfit',-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;
+  }
+  .app{
+    max-width:430px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+    position:relative;
+  }
+  .view{ flex:1; padding:14px 20px 110px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .view.hidden{ display:none; }
+
+  /* ---------- Onboarding ---------- */
+  .onboarding-overlay{
+    position:fixed; inset:0; z-index:200;
+    background:linear-gradient(160deg, var(--dawn-1), var(--dawn-2) 55%, var(--dawn-3));
+    display:flex; align-items:center; justify-content:center;
+    padding:32px;
+  }
+  .onboarding-overlay.hidden{ display:none; }
+  .onboarding-card{
+    background:rgba(255,255,255,.88); backdrop-filter:blur(10px);
+    border-radius:26px; padding:34px 26px; box-shadow:var(--shadow);
+    max-width:320px; width:100%; text-align:center;
+  }
+  .onboarding-emoji{ font-size:42px; margin-bottom:8px; }
+  .onboarding-title{ font-family:'Fraunces',serif; font-weight:600; font-size:22px; margin:0 0 6px; }
+  .onboarding-sub{ font-size:13.5px; color:var(--ink-soft); margin:0 0 22px; }
+  .onboarding-input{ width:100%; text-align:center; border:none; border-bottom:2px solid #EEE7F5; background:transparent; font-family:'Outfit'; font-weight:700; font-size:22px; padding:8px 4px; outline:none; margin-bottom:22px; color:var(--ink); }
+  .onboarding-input::placeholder{ color:#D5CCE3; font-weight:600; }
+
+  /* ---------- Sun hero ---------- */
+  .sun-hero{ position:relative; border-radius:28px; overflow:hidden; height:160px; margin:0 0 18px; box-shadow:var(--shadow); }
+  .sun-hero svg{ width:100%; height:100%; display:block; }
+  #skyDayRect{ transition:opacity .7s ease; }
+  #sunCircle{ transition:cy .7s cubic-bezier(.22,.9,.3,1), fill .6s ease; }
+  #rays{ transition:opacity .5s ease; }
+  .hero-status{ position:absolute; left:18px; bottom:14px; display:flex; gap:8px; flex-wrap:wrap; }
+  .hero-chip{ display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.55); backdrop-filter:blur(6px); border-radius:14px; padding:5px 8px; font-size:12.5px; font-weight:600; color:var(--ink); opacity:.55; transition:opacity .4s ease, background .4s ease; }
+  .hero-chip.done{ opacity:1; background:rgba(255,255,255,.85); }
+  .hero-title{ position:absolute; top:14px; left:18px; right:18px; font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:#3a2f55; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* ---------- Date nav ---------- */
+  .date-nav{ display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:16px; }
+  .date-nav button{ background:var(--card); border:none; width:34px; height:34px; border-radius:50%; font-size:16px; color:var(--ink); box-shadow:var(--shadow); cursor:pointer; flex-shrink:0; }
+  .date-nav button:disabled{ opacity:.25; }
+  .date-label{ font-family:'Fraunces',serif; font-weight:600; font-size:15.5px; text-transform:capitalize; min-width:150px; text-align:center; }
+
+  /* ---------- Direct entry grid (sans clic) ---------- */
+  .entry-card{ background:transparent; }
+  .field-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field-tile{ background:var(--card); border-radius:18px; padding:16px 8px 14px; display:flex; flex-direction:column; align-items:center; gap:5px; box-shadow:var(--shadow); border-bottom:3px solid var(--accent); }
+  .field-tile[data-field="weight"]{ --accent:var(--weight); }
+  .field-tile[data-field="steps"]{ --accent:var(--steps); }
+  .field-tile[data-field="calIn"]{ --accent:var(--cal-in); }
+  .field-tile[data-field="calOut"]{ --accent:var(--cal-out); }
+  .field-icon{ font-size:26px; }
+  .field-label{ font-size:11px; font-weight:600; color:var(--ink-soft); text-align:center; line-height:1.2; min-height:26px; display:flex; align-items:center; }
+  .field-input-row{ display:flex; align-items:baseline; gap:4px; border-bottom:2px solid #EEE7F5; padding-bottom:4px; }
+  .field-input-row input{ width:72px; text-align:center; border:none; background:transparent; font-family:'Outfit'; font-weight:700; font-size:21px; color:var(--ink); outline:none; -webkit-appearance:none; padding:0; }
+  .field-input-row input::placeholder{ color:#D5CCE3; font-weight:600; }
+  .field-input-row input::-webkit-outer-spin-button,
+  .field-input-row input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .unit{ font-size:11px; color:var(--ink-soft); font-weight:500; white-space:nowrap; }
+
+  /* ---------- Calendrier ---------- */
+  .calendar-overlay{ position:fixed; inset:0; z-index:180; background:rgba(20,16,30,.45); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .calendar-overlay.hidden{ display:none; }
+  .calendar-card{ background:#fff; border-radius:22px; padding:20px; max-width:300px; width:100%; box-shadow:var(--shadow); }
+  .calendar-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .calendar-head button{ background:var(--bg); border:none; width:30px; height:30px; border-radius:50%; font-size:15px; cursor:pointer; }
+  .calendar-head button:disabled{ opacity:.25; }
+  .calendar-head span{ font-family:'Fraunces',serif; font-weight:600; font-size:15px; text-transform:capitalize; }
+  .calendar-weekdays{ display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:11px; color:var(--ink-soft); font-weight:600; margin-bottom:6px; }
+  .calendar-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal-day{ aspect-ratio:1; border:none; background:none; border-radius:50%; font-size:13px; font-weight:600; color:var(--ink); cursor:pointer; position:relative; font-family:'Outfit'; }
+  .cal-day.empty{ visibility:hidden; cursor:default; }
+  .cal-day.today{ box-shadow:inset 0 0 0 2px var(--dawn-1); }
+  .cal-day.selected{ background:var(--ink); color:#fff; }
+  .cal-day.future{ opacity:.25; cursor:default; }
+  .cal-day.has-entry::after{ content:""; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--dawn-1); }
+  .cal-day.selected.has-entry::after{ background:#fff; }
+  .calendar-card .link-btn{ display:block; margin:14px auto 0; }
+
+  .btn-primary{ background:linear-gradient(135deg,var(--dawn-1),var(--dawn-2)); color:#3a2f55; border:none; border-radius:16px; padding:14px; font-family:'Outfit'; font-weight:700; font-size:15.5px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s ease; }
+  .btn-primary:active{ transform:scale(.97); }
+  .link-btn{ background:none; border:none; color:var(--ink-soft); font-weight:600; font-size:13px; text-decoration:underline; cursor:pointer; font-family:'Outfit'; padding:6px; }
+
+  /* ---------- Tab bar ---------- */
+  .tab-bar{ position:sticky; bottom:0; left:0; right:0; display:flex; background:rgba(255,255,255,.9); backdrop-filter:blur(14px); border-top:1px solid #ECE4F6; padding:9px 8px calc(9px + env(safe-area-inset-bottom)); }
+  .tab-btn{ flex:1; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:19px; color:var(--ink-soft); padding:4px 0; cursor:pointer; }
+  .tab-btn span{ font-size:11px; font-weight:600; font-family:'Outfit'; }
+  .tab-btn.active{ color:var(--ink); }
+
+  /* ---------- Section headers / pills ---------- */
+  .section-title{ font-family:'Fraunces',serif; font-weight:600; font-size:23px; margin:4px 0 4px; }
+  .section-sub{ font-size:13px; color:var(--ink-soft); margin:0 0 16px; }
+  .range-pills{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .pill{ border:none; background:var(--card); padding:8px 14px; border-radius:20px; font-weight:600; font-size:13px; color:var(--ink-soft); cursor:pointer; box-shadow:0 4px 10px -4px rgba(43,36,56,.15); font-family:'Outfit'; }
+  .pill.active{ background:var(--ink); color:#fff; }
+
+  /* ---------- Chart cards ---------- */
+  .chart-card{ background:var(--card); border-radius:var(--radius); padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .chart-card-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px; }
+  .chart-card-title{ font-weight:700; font-size:14px; display:flex; gap:7px; align-items:center; color:var(--ink-soft); }
+  .chart-card-value{ font-family:'Outfit'; font-weight:800; font-size:21px; text-align:right; }
+  .chart-card-delta{ font-size:11.5px; font-weight:600; color:var(--ink-soft); text-align:right; display:block; }
+  .chart-card svg{ width:100%; height:auto; display:block; margin-top:6px; }
+  .axis-label{ font-size:10px; fill:var(--ink-soft); font-family:'Outfit'; }
+  .goal-recap{ font-size:12px; color:var(--ink-soft); margin:6px 0 0; line-height:1.5; }
+  .goal-edit-form{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:flex-end; }
+  .goal-edit-form label{ display:flex; flex-direction:column; font-size:10.5px; color:var(--ink-soft); gap:3px; }
+  .goal-edit-form input{ width:74px; border:1px solid #EEE7F5; border-radius:8px; padding:6px 8px; font-family:'Outfit'; font-size:13.5px; }
+  .goal-edit-form button{ background:var(--ink); color:#fff; border:none; border-radius:8px; padding:7px 12px; font-size:12.5px; font-weight:700; cursor:pointer; }
+
+  .empty-state{ text-align:center; padding:34px 14px; color:var(--ink-soft); font-size:13.5px; line-height:1.5; }
+  .empty-state .emoji{ font-size:32px; display:block; margin-bottom:8px; }
+
+  /* ---------- Correlation cards ---------- */
+  .corr-card{ background:var(--card); border-radius:var(--radius); padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .corr-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; }
+  .corr-pair{ font-weight:700; font-size:14px; }
+  .corr-r{ font-family:'Outfit'; font-weight:800; font-size:21px; flex-shrink:0; }
+  .corr-body{ display:flex; gap:14px; align-items:center; }
+  .corr-body svg{ flex-shrink:0; width:96px; height:96px; }
+  .corr-bar{ height:7px; border-radius:6px; background:#EEE7F5; position:relative; margin:8px 0 10px; }
+  .corr-bar-fill{ position:absolute; top:0; bottom:0; border-radius:6px; }
+  .corr-bar-mid{ position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:#D5CCE3; }
+  .corr-text{ font-size:13px; color:var(--ink-soft); line-height:1.5; flex:1; }
+  .disclaimer{ font-size:11.5px; color:var(--ink-soft); text-align:center; margin:6px 0 10px; line-height:1.5; padding:0 6px; }
+
+  .toast{ position:fixed; bottom:88px; left:50%; transform:translateX(-50%) translateY(16px); background:var(--ink); color:#fff; padding:10px 20px; border-radius:30px; font-weight:600; font-size:14px; opacity:0; transition:opacity .3s, transform .3s; pointer-events:none; z-index:50; font-family:'Outfit'; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  :focus-visible{ outline:3px solid var(--dawn-3); outline-offset:2px; border-radius:4px; }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="onboarding-overlay hidden" id="onboarding">
+  <div class="onboarding-card">
+    <div class="onboarding-emoji">🌅</div>
+    <p class="onboarding-title">Bienvenue !</p>
+    <p class="onboarding-sub">Comment tu t'appelles ?</p>
+    <input id="onboardingInput" class="onboarding-input" type="text" placeholder="Ton prénom" enterkeyhint="done" autocomplete="given-name" maxlength="20">
+    <button class="btn-primary" id="onboardingSubmit" style="width:100%">Commencer</button>
+  </div>
+</div>
+
+<div class="calendar-overlay hidden" id="calendarOverlay">
+  <div class="calendar-card">
+    <div class="calendar-head">
+      <button id="calPrevMonth" aria-label="Mois précédent">‹</button>
+      <span id="calMonthLabel">—</span>
+      <button id="calNextMonth" aria-label="Mois suivant">›</button>
+    </div>
+    <div class="calendar-weekdays">
+      <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <button class="link-btn" id="calClose">Fermer</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ===== TODAY VIEW ===== -->
+  <main id="view-today" class="view">
+
+    <section class="sun-hero" id="sunHero" aria-hidden="true">
+      <svg viewBox="0 0 320 168" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="skyNight" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#332B52"/>
+            <stop offset="100%" stop-color="#9C86C4"/>
+          </linearGradient>
+          <linearGradient id="skyDay" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FFD3B0"/>
+            <stop offset="55%" stop-color="#F6C9C9"/>
+            <stop offset="100%" stop-color="#AEDFF7"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="168" fill="url(#skyNight)"/>
+        <rect id="skyDayRect" width="320" height="168" fill="url(#skyDay)" style="opacity:0"/>
+        <path d="M0,128 Q160,108 320,128 L320,168 L0,168 Z" fill="rgba(43,36,56,0.10)"/>
+        <g id="rays" style="opacity:0" stroke="#FFE8B0" stroke-width="2.5" stroke-linecap="round">
+          <line x1="160" y1="20" x2="160" y2="6"/>
+          <line x1="186" y1="27" x2="196" y2="16"/>
+          <line x1="134" y1="27" x2="124" y2="16"/>
+          <line x1="206" y1="44" x2="218" y2="36"/>
+          <line x1="114" y1="44" x2="102" y2="36"/>
+        </g>
+        <circle id="sunCircle" cx="160" cy="152" r="24" fill="#8C7AB8"/>
+      </svg>
+      <div class="hero-title" id="heroTitle">Bonjour 🌷</div>
+      <div class="hero-status">
+        <div class="hero-chip" id="chipWeight">⚖️</div>
+        <div class="hero-chip" id="chipSteps">👟</div>
+        <div class="hero-chip" id="chipCalIn">🍽️</div>
+        <div class="hero-chip" id="chipCalOut">⌚</div>
+      </div>
+    </section>
+
+    <section class="date-nav">
+      <button id="prevDay" aria-label="Jour précédent">‹</button>
+      <div class="date-label" id="dateLabel">—</div>
+      <button id="nextDay" aria-label="Jour suivant">›</button>
+      <button id="openCalendar" aria-label="Choisir une date">📅</button>
+    </section>
+
+    <section class="entry-card">
+      <div class="field-grid">
+
+        <div class="field-tile" data-field="weight">
+          <span class="field-icon">⚖️</span>
+          <span class="field-label">Poids</span>
+          <div class="field-input-row">
+            <input id="fieldWeight" type="number" inputmode="decimal" step="0.1" placeholder="—" enterkeyhint="done">
+            <span class="unit">kg</span>
+          </div>
+        </div>
+
+        <div class="field-tile" data-field="steps">
+          <span class="field-icon">👟</span>
+          <span class="field-label">Pas</span>
+          <div class="field-input-row">
+            <input id="fieldSteps" type="number" inputmode="numeric" step="1" placeholder="—" enterkeyhint="done">
+            <span class="unit">pas</span>
+          </div>
+        </div>
+
+        <div class="field-tile" data-field="calIn">
+          <span class="field-icon">🍽️</span>
+          <span class="field-label">Calories ingérées</span>
+          <div class="field-input-row">
+            <input id="fieldCalIn" type="number" inputmode="numeric" step="1" placeholder="—" enterkeyhint="done">
+            <span class="unit">kcal</span>
+          </div>
+        </div>
+
+        <div class="field-tile" data-field="calOut">
+          <span class="field-icon">⌚</span>
+          <span class="field-label">Calories brûlées</span>
+          <div class="field-input-row">
+            <input id="fieldCalOut" type="number" inputmode="numeric" step="1" placeholder="—" enterkeyhint="done">
+            <span class="unit">kcal</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== CHARTS VIEW ===== -->
+  <main id="view-charts" class="view hidden">
+    <h1 class="section-title">Courbes</h1>
+    <p class="section-sub">La ligne pointillée fine montre la tendance lissée sur 7 jours.</p>
+    <div class="range-pills" id="rangePills">
+      <button class="pill active" data-range="7">7 j</button>
+      <button class="pill" data-range="30">30 j</button>
+      <button class="pill" data-range="90">90 j</button>
+      <button class="pill" data-range="120">4 mois</button>
+      <button class="pill" data-range="all">Tout</button>
+    </div>
+    <div id="chartWeight" class="chart-card"></div>
+    <div id="chartSteps" class="chart-card"></div>
+    <div id="chartCalIn" class="chart-card"></div>
+    <div id="chartDeficit" class="chart-card"></div>
+  </main>
+
+  <!-- ===== CORRELATIONS VIEW ===== -->
+  <main id="view-corr" class="view hidden">
+    <h1 class="section-title">Liens entre tes données</h1>
+    <p class="section-sub">Calculé sur tous les jours où les deux données existent.</p>
+    <div id="corrWeightSteps" class="corr-card"></div>
+    <div id="corrWeightDeficit" class="corr-card"></div>
+    <p class="disclaimer">Une corrélation indique que deux choses évoluent ensemble — pas que l'une cause l'autre. 🙂</p>
+  </main>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="today" aria-label="Aujourd'hui">🏠<span>Aujourd'hui</span></button>
+    <button class="tab-btn" data-tab="charts" aria-label="Courbes">📈<span>Courbes</span></button>
+    <button class="tab-btn" data-tab="corr" aria-label="Liens">🔗<span>Liens</span></button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DATA_KEY = "tracker-data-v1";
+  var NAME_KEY = "tracker-user-name";
+  var GOAL_KEY = "tracker-goal-v1";
+  var BASE_METABOLISM = 1200; // (C) calories totales estimées = calories brûlées (montre) + cette base
+  var DB = { entries: {} };
+  var GOAL = null;
+  var userName = "";
+  var currentDate = todayStr();
+  var activeTab = "today";
+  var chartRange = 7; // nombre de jours, ou Infinity
+  var calViewYear, calViewMonth;
+
+  // ---------- date helpers ----------
+  function pad(n){ return n.toString().padStart(2,"0"); }
+  function toKey(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function todayStr(){ return toKey(new Date()); }
+  function keyToDate(k){
+    var parts = k.split("-").map(Number);
+    return new Date(parts[0], parts[1]-1, parts[2]);
+  }
+  function addDays(dateStr, delta){
+    var d = keyToDate(dateStr);
+    d.setDate(d.getDate()+delta);
+    return toKey(d);
+  }
+  function addMonths(dateStr, n){
+    var d = keyToDate(dateStr);
+    d.setMonth(d.getMonth()+n);
+    return toKey(d);
+  }
+  function isToday(dateStr){ return dateStr === todayStr(); }
+  function formatDateLabel(dateStr){
+    var today = todayStr();
+    var yest = addDays(today, -1);
+    if(dateStr === today) return "Aujourd'hui";
+    if(dateStr === yest) return "Hier";
+    var d = keyToDate(dateStr);
+    return d.toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" });
+  }
+  function formatShort(dateStr){
+    var d = keyToDate(dateStr);
+    return d.toLocaleDateString("fr-FR", { day:"numeric", month:"short" });
+  }
+  function formatLong(dateStr){
+    var d = keyToDate(dateStr);
+    return d.toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" });
+  }
+
+  // ---------- formule calories (A ingérées, B brûlées, C totales estimées, D déficit) ----------
+  function getMetricValue(entry, metric){
+    if(!entry) return null;
+    if(metric === "deficit"){
+      if(entry.caloriesIn == null || entry.caloriesBurned == null) return null;
+      var c = entry.caloriesBurned + BASE_METABOLISM;
+      return entry.caloriesIn - c;
+    }
+    var v = entry[metric];
+    return v == null ? null : v;
+  }
+
+  // ---------- storage ----------
+  function loadDB(){
+    try{
+      var raw = localStorage.getItem(DATA_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && parsed.entries) DB = parsed;
+      }
+    }catch(e){ DB = { entries:{} }; }
+    var migrated = false;
+    Object.keys(DB.entries).forEach(function(k){
+      var e = DB.entries[k];
+      if(e.calories != null && e.caloriesIn == null){
+        e.caloriesIn = e.calories;
+        migrated = true;
+      }
+      if(e.calories != null){
+        delete e.calories;
+        migrated = true;
+      }
+    });
+    if(migrated) persistDB();
+  }
+  function persistDB(){
+    try{
+      localStorage.setItem(DATA_KEY, JSON.stringify(DB));
+    }catch(e){
+      console.error("storage error", e);
+      showToast("Sauvegarde impossible sur cet appareil");
+    }
+  }
+  function getStoredName(){
+    try{ return localStorage.getItem(NAME_KEY); }catch(e){ return null; }
+  }
+  function setStoredName(name){
+    try{ localStorage.setItem(NAME_KEY, name); }catch(e){}
+  }
+  function loadGoal(){
+    try{
+      var raw = localStorage.getItem(GOAL_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return null;
+  }
+  function saveGoal(g){
+    GOAL = g;
+    try{ localStorage.setItem(GOAL_KEY, JSON.stringify(g)); }catch(e){}
+  }
+  function ensureGoal(){
+    var g = loadGoal();
+    if(!g){
+      var start = todayStr();
+      g = {
+        targetWeight: 60,
+        targetDate: addMonths(start, 4),
+        startWeight: findLastKnownWeight(start),
+        startDate: start
+      };
+      saveGoal(g);
+    }
+    GOAL = g;
+  }
+
+  // ---------- haptique ----------
+  function vibrate(pattern){
+    try{
+      if(navigator.vibrate) navigator.vibrate(pattern);
+    }catch(e){}
+  }
+
+  // ---------- toast ----------
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 1800);
+  }
+
+  // ---------- onboarding ----------
+  var onboardingEl = document.getElementById("onboarding");
+  var onboardingInput = document.getElementById("onboardingInput");
+  var onboardingSubmit = document.getElementById("onboardingSubmit");
+  var heroTitle = document.getElementById("heroTitle");
+
+  function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+  function updateGreeting(){
+    heroTitle.textContent = userName ? ("Bonjour " + userName + " 🌷") : "Bonjour 🌷";
+  }
+  function submitOnboarding(){
+    var name = onboardingInput.value.trim();
+    if(!name){
+      showToast("Dis-moi comment tu t'appelles 🙂");
+      return;
+    }
+    userName = capitalize(name);
+    setStoredName(userName);
+    vibrate(20);
+    onboardingEl.classList.add("hidden");
+    updateGreeting();
+    renderToday({ autofocus:true });
+  }
+  onboardingSubmit.addEventListener("click", submitOnboarding);
+  onboardingInput.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); submitOnboarding(); }
+  });
+
+  // ---------- sun hero ----------
+  var skyDayRect = document.getElementById("skyDayRect");
+  var sunCircle = document.getElementById("sunCircle");
+  var rays = document.getElementById("rays");
+  var chipWeight = document.getElementById("chipWeight");
+  var chipSteps = document.getElementById("chipSteps");
+  var chipCalIn = document.getElementById("chipCalIn");
+  var chipCalOut = document.getElementById("chipCalOut");
+
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function hexToRgb(hex){
+    var v = parseInt(hex.slice(1),16);
+    return [(v>>16)&255, (v>>8)&255, v&255];
+  }
+  function lerpColor(hexA, hexB, t){
+    var a = hexToRgb(hexA), b = hexToRgb(hexB);
+    var r = Math.round(lerp(a[0],b[0],t));
+    var g = Math.round(lerp(a[1],b[1],t));
+    var bl = Math.round(lerp(a[2],b[2],t));
+    return "rgb(" + r + "," + g + "," + bl + ")";
+  }
+
+  function currentFillCount(){
+    var entry = DB.entries[currentDate] || {};
+    var filled = [entry.weight!=null, entry.steps!=null, entry.caloriesIn!=null, entry.caloriesBurned!=null];
+    return { filled: filled, count: filled.filter(Boolean).length };
+  }
+
+  function updateSunHero(){
+    var f = currentFillCount();
+    var progress = f.count/4;
+
+    skyDayRect.style.opacity = progress;
+    sunCircle.setAttribute("cy", (152 - progress*120).toString());
+    sunCircle.setAttribute("fill", lerpColor("#8C7AB8", "#F4A261", progress));
+    rays.style.opacity = progress >= 0.999 ? "1" : "0";
+
+    chipWeight.classList.toggle("done", f.filled[0]);
+    chipSteps.classList.toggle("done", f.filled[1]);
+    chipCalIn.classList.toggle("done", f.filled[2]);
+    chipCalOut.classList.toggle("done", f.filled[3]);
+  }
+
+  // ---------- saisie directe (sans clic) ----------
+  var fieldWeight = document.getElementById("fieldWeight");
+  var fieldSteps = document.getElementById("fieldSteps");
+  var fieldCalIn = document.getElementById("fieldCalIn");
+  var fieldCalOut = document.getElementById("fieldCalOut");
+  var FIELDS = [
+    { key:"weight", el:fieldWeight, isFloat:true },
+    { key:"steps", el:fieldSteps, isFloat:false },
+    { key:"caloriesIn", el:fieldCalIn, isFloat:false },
+    { key:"caloriesBurned", el:fieldCalOut, isFloat:false }
+  ];
+
+  function commitField(field){
+    var raw = field.el.value.trim();
+    var entry = DB.entries[currentDate] || {};
+    var changed = false;
+    if(raw === ""){
+      if(entry[field.key] != null){ delete entry[field.key]; changed = true; }
+    }else{
+      var val = field.isFloat ? parseFloat(raw.replace(",", ".")) : parseInt(raw, 10);
+      if(!isNaN(val) && entry[field.key] !== val){ entry[field.key] = val; changed = true; }
+    }
+    if(Object.keys(entry).length === 0){
+      delete DB.entries[currentDate];
+    }else{
+      DB.entries[currentDate] = entry;
+    }
+    if(changed){
+      persistDB();
+      vibrate(18);
+      updateSunHero();
+      if(activeTab === "charts") renderCharts();
+      if(activeTab === "corr") renderCorrelations();
+    }
+  }
+
+  FIELDS.forEach(function(field){
+    field.el.addEventListener("focus", function(){ field.el.select(); });
+    field.el.addEventListener("blur", function(){ commitField(field); });
+    field.el.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){ e.preventDefault(); field.el.blur(); }
+    });
+  });
+
+  // ---------- date navigation ----------
+  var dateLabel = document.getElementById("dateLabel");
+  var prevDayBtn = document.getElementById("prevDay");
+  var nextDayBtn = document.getElementById("nextDay");
+
+  function findLastKnownWeight(uptoDateStr){
+    var dates = Object.keys(DB.entries)
+      .filter(function(k){ return k <= uptoDateStr && DB.entries[k].weight != null; })
+      .sort();
+    if(dates.length === 0) return null;
+    return DB.entries[dates[dates.length-1]].weight;
+  }
+
+  function focusFirstEmpty(entry){
+    for(var i=0;i<FIELDS.length;i++){
+      var key = FIELDS[i].key;
+      if(entry[key] == null){
+        setTimeout(function(el){ return function(){ el.focus(); }; }(FIELDS[i].el), 200);
+        return;
+      }
+    }
+  }
+
+  function renderToday(opts){
+    opts = opts || {};
+    dateLabel.textContent = formatDateLabel(currentDate);
+    nextDayBtn.disabled = isToday(currentDate);
+
+    var entry = DB.entries[currentDate] || {};
+
+    var weightValue;
+    if(isToday(currentDate)){
+      var fallbackWeight = findLastKnownWeight(currentDate);
+      weightValue = fallbackWeight != null ? fallbackWeight : "";
+    }else{
+      weightValue = entry.weight != null ? entry.weight : "";
+    }
+    fieldWeight.value = weightValue;
+    fieldSteps.value = entry.steps != null ? entry.steps : "";
+    fieldCalIn.value = entry.caloriesIn != null ? entry.caloriesIn : "";
+    fieldCalOut.value = entry.caloriesBurned != null ? entry.caloriesBurned : "";
+
+    updateSunHero();
+
+    if(opts.autofocus) focusFirstEmpty(entry);
+  }
+
+  prevDayBtn.addEventListener("click", function(){
+    currentDate = addDays(currentDate, -1);
+    renderToday({ autofocus:false });
+  });
+  nextDayBtn.addEventListener("click", function(){
+    if(!isToday(currentDate)){
+      currentDate = addDays(currentDate, 1);
+      renderToday({ autofocus:false });
+    }
+  });
+
+  // ---------- calendrier ----------
+  var calendarOverlay = document.getElementById("calendarOverlay");
+  var calMonthLabel = document.getElementById("calMonthLabel");
+  var calendarGrid = document.getElementById("calendarGrid");
+  var calPrevMonth = document.getElementById("calPrevMonth");
+  var calNextMonth = document.getElementById("calNextMonth");
+  var MONTH_NAMES = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+
+  function hasAnyData(key){
+    var e = DB.entries[key];
+    if(!e) return false;
+    return e.weight != null || e.steps != null || e.caloriesIn != null || e.caloriesBurned != null;
+  }
+
+  function renderCalendar(){
+    var first = new Date(calViewYear, calViewMonth, 1);
+    var startOffset = (first.getDay() + 6) % 7; // lundi = 0
+    var daysInMonth = new Date(calViewYear, calViewMonth+1, 0).getDate();
+    calMonthLabel.textContent = MONTH_NAMES[calViewMonth] + " " + calViewYear;
+
+    var today = todayStr();
+    var todayD = keyToDate(today);
+    var isCurrentMonthView = (calViewYear === todayD.getFullYear() && calViewMonth === todayD.getMonth());
+    calNextMonth.disabled = isCurrentMonthView;
+
+    var html = "";
+    for(var i=0;i<startOffset;i++) html += '<button class="cal-day empty" disabled></button>';
+    for(var day=1; day<=daysInMonth; day++){
+      var d2 = new Date(calViewYear, calViewMonth, day);
+      var key = toKey(d2);
+      var classes = "cal-day";
+      if(key === today) classes += " today";
+      if(key === currentDate) classes += " selected";
+      var isFuture = key > today;
+      if(isFuture) classes += " future";
+      if(hasAnyData(key)) classes += " has-entry";
+      html += '<button class="'+classes+'" data-key="'+key+'"'+(isFuture ? " disabled" : "")+'>'+day+'</button>';
+    }
+    calendarGrid.innerHTML = html;
+    calendarGrid.querySelectorAll(".cal-day:not(.empty):not(.future)").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        currentDate = btn.dataset.key;
+        closeCalendar();
+        renderToday({ autofocus:false });
+      });
+    });
+  }
+  function openCalendar(){
+    var d = keyToDate(currentDate);
+    calViewYear = d.getFullYear();
+    calViewMonth = d.getMonth();
+    renderCalendar();
+    calendarOverlay.classList.remove("hidden");
+  }
+  function closeCalendar(){
+    calendarOverlay.classList.add("hidden");
+  }
+  document.getElementById("openCalendar").addEventListener("click", openCalendar);
+  document.getElementById("calClose").addEventListener("click", closeCalendar);
+  calPrevMonth.addEventListener("click", function(){
+    calViewMonth--;
+    if(calViewMonth < 0){ calViewMonth = 11; calViewYear--; }
+    renderCalendar();
+  });
+  calNextMonth.addEventListener("click", function(){
+    if(calNextMonth.disabled) return;
+    calViewMonth++;
+    if(calViewMonth > 11){ calViewMonth = 0; calViewYear++; }
+    renderCalendar();
+  });
+
+  // ---------- tabs ----------
+  var tabButtons = document.querySelectorAll(".tab-btn");
+  var views = {
+    today: document.getElementById("view-today"),
+    charts: document.getElementById("view-charts"),
+    corr: document.getElementById("view-corr")
+  };
+  tabButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      activeTab = btn.dataset.tab;
+      tabButtons.forEach(function(b){ b.classList.toggle("active", b === btn); });
+      Object.keys(views).forEach(function(k){ views[k].classList.toggle("hidden", k !== activeTab); });
+      if(activeTab === "charts") renderCharts();
+      if(activeTab === "corr") renderCorrelations();
+    });
+  });
+
+  // ---------- chart range pills ----------
+  var rangePills = document.querySelectorAll("#rangePills .pill");
+  rangePills.forEach(function(p){
+    p.addEventListener("click", function(){
+      chartRange = p.dataset.range === "all" ? Infinity : parseInt(p.dataset.range, 10);
+      rangePills.forEach(function(x){ x.classList.toggle("active", x === p); });
+      renderCharts();
+    });
+  });
+
+  // ---------- math helpers ----------
+  function movingAverage(values, windowSize){
+    var out = [];
+    for(var i=0; i<values.length; i++){
+      var start = Math.max(0, i - windowSize + 1);
+      var slice = values.slice(start, i+1);
+      var sum = slice.reduce(function(a,b){ return a+b; }, 0);
+      out.push(sum/slice.length);
+    }
+    return out;
+  }
+  function pearson(xs, ys){
+    var n = xs.length;
+    if(n < 2) return null;
+    var mx = xs.reduce(function(a,b){return a+b;},0)/n;
+    var my = ys.reduce(function(a,b){return a+b;},0)/n;
+    var num=0, dx2=0, dy2=0;
+    for(var i=0;i<n;i++){
+      var dx = xs[i]-mx, dy = ys[i]-my;
+      num += dx*dy; dx2 += dx*dx; dy2 += dy*dy;
+    }
+    var denom = Math.sqrt(dx2*dy2);
+    if(denom === 0) return 0;
+    return num/denom;
+  }
+  function linreg(xs, ys){
+    var n = xs.length;
+    var mx = xs.reduce(function(a,b){return a+b;},0)/n;
+    var my = ys.reduce(function(a,b){return a+b;},0)/n;
+    var num=0, den=0;
+    for(var i=0;i<n;i++){ var dx=xs[i]-mx; num += dx*(ys[i]-my); den += dx*dx; }
+    var slope = den===0 ? 0 : num/den;
+    var intercept = my - slope*mx;
+    return { slope: slope, intercept: intercept };
+  }
+  function smoothPath(points){
+    if(points.length === 0) return "";
+    if(points.length === 1) return "M" + points[0].x + "," + points[0].y;
+    var d = "M" + points[0].x + "," + points[0].y;
+    for(var i=0; i<points.length-1; i++){
+      var curr = points[i], next = points[i+1];
+      var midX = (curr.x+next.x)/2, midY = (curr.y+next.y)/2;
+      d += " Q" + curr.x + "," + curr.y + " " + midX + "," + midY;
+    }
+    var last = points[points.length-1];
+    d += " L" + last.x + "," + last.y;
+    return d;
+  }
+
+  // ---------- charts ----------
+  var CHART_W = 320, CHART_H = 130, PAD = { l:8, r:8, t:10, b:18 };
+
+  function getSeries(metric, rangeDays){
+    var keys = Object.keys(DB.entries).filter(function(k){
+      return getMetricValue(DB.entries[k], metric) != null;
+    }).sort();
+    if(rangeDays !== Infinity){
+      var cutoff = addDays(todayStr(), -(rangeDays-1));
+      keys = keys.filter(function(k){ return k >= cutoff; });
+    }
+    return keys.map(function(k){ return { key:k, date: keyToDate(k), value: getMetricValue(DB.entries[k], metric) }; });
+  }
+
+  function chartDomain(rangeDays){
+    var today = todayStr();
+    var start = rangeDays === Infinity ? null : addDays(today, -(rangeDays-1));
+    return { start: start, end: today };
+  }
+
+  function emptyStateHtml(msg){
+    return '<div class="empty-state"><span class="emoji">🌱</span>' + msg + '</div>';
+  }
+
+  var METRIC_DEFS = {
+    weight: { label:"Poids", icon:"⚖️", unit:"kg", hex:"#E8628C", decimals:1 },
+    steps: { label:"Pas", icon:"👟", unit:"pas", hex:"#239E90", decimals:0 },
+    caloriesIn: { label:"Calories ingérées", icon:"🍽️", unit:"kcal", hex:"#F2994A", decimals:0 },
+    caloriesBurned: { label:"Calories brûlées", icon:"⌚", unit:"kcal", hex:"#4FA8D8", decimals:0 },
+    deficit: { label:"Déficit estimé", icon:"📉", unit:"kcal", hex:"#9B6FD1", decimals:0 }
+  };
+
+  function buildChartSVG(points, color, extraLines){
+    extraLines = extraLines || [];
+    var xs = points.map(function(p){ return p.date.getTime(); });
+    var ys = points.map(function(p){ return p.value; });
+    var allYs = ys.concat(extraLines.reduce(function(acc,l){ return acc.concat([l.from.value, l.to.value]); }, []));
+    var xMin = Math.min.apply(null, xs), xMax = Math.max.apply(null, xs);
+    var yMin = Math.min.apply(null, allYs), yMax = Math.max.apply(null, allYs);
+    var yPad = (yMax - yMin) * 0.2 || Math.max(1, Math.abs(yMax)*0.1, 1);
+    var yLo = yMin - yPad, yHi = yMax + yPad;
+    var w = CHART_W - PAD.l - PAD.r, h = CHART_H - PAD.t - PAD.b;
+
+    function xScale(t){ return xMax===xMin ? PAD.l + w/2 : PAD.l + (t-xMin)/(xMax-xMin)*w; }
+    function yScale(v){ return PAD.t + h - (v-yLo)/(yHi-yLo)*h; }
+
+    var pts = points.map(function(p){ return { x: xScale(p.date.getTime()), y: yScale(p.value) }; });
+    var linePath = smoothPath(pts);
+
+    var maValues = movingAverage(ys, Math.min(7, ys.length));
+    var maPts = maValues.map(function(v,i){ return { x: pts[i].x, y: yScale(v) }; });
+    var maPath = ys.length >= 3 ? smoothPath(maPts) : "";
+
+    var areaPath = "";
+    if(pts.length >= 2){
+      var first = pts[0], lastPt = pts[pts.length-1];
+      areaPath = linePath + " L" + lastPt.x + "," + (PAD.t+h) + " L" + first.x + "," + (PAD.t+h) + " Z";
+    }
+
+    var gradId = "grad-" + color.replace("#","");
+    var dotsHtml = pts.map(function(p){ return '<circle cx="'+p.x+'" cy="'+p.y+'" r="2.6" fill="'+color+'" />'; }).join("");
+    var startLabel = formatShort(points[0].key);
+    var endLabel = formatShort(points[points.length-1].key);
+
+    var extraHtml = extraLines.map(function(l){
+      var x1 = xScale(l.from.date.getTime()), y1 = yScale(l.from.value);
+      var x2 = xScale(l.to.date.getTime()), y2 = yScale(l.to.value);
+      return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+l.color+'" stroke-width="1.8" stroke-dasharray="2,4" stroke-linecap="round" opacity="0.85"/>';
+    }).join("");
+
+    return '<svg viewBox="0 0 '+CHART_W+' '+CHART_H+'" preserveAspectRatio="none">' +
+      '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="'+color+'" stop-opacity="0.28"/>' +
+      '<stop offset="100%" stop-color="'+color+'" stop-opacity="0"/>' +
+      '</linearGradient></defs>' +
+      (areaPath ? '<path d="'+areaPath+'" fill="url(#'+gradId+')" stroke="none"/>' : "") +
+      extraHtml +
+      (maPath ? '<path d="'+maPath+'" fill="none" stroke="'+color+'" stroke-width="1.6" stroke-dasharray="4,3" opacity="0.55"/>' : "") +
+      '<path d="'+linePath+'" fill="none" stroke="'+color+'" stroke-width="2.4" stroke-linecap="round"/>' +
+      dotsHtml +
+      '<text class="axis-label" x="'+PAD.l+'" y="'+CHART_H+'">'+startLabel+'</text>' +
+      '<text class="axis-label" x="'+(CHART_W-PAD.r)+'" y="'+CHART_H+'" text-anchor="end">'+endLabel+'</text>' +
+      '</svg>';
+  }
+
+  function renderChartCard(containerId, metric){
+    var def = METRIC_DEFS[metric];
+    var container = document.getElementById(containerId);
+    var points = getSeries(metric, chartRange);
+
+    if(points.length < 2){
+      var headHtmlEmpty = '<div class="chart-card-head"><span class="chart-card-title">'+def.icon+' '+def.label+'</span></div>';
+      container.innerHTML = headHtmlEmpty + emptyStateHtml("Pas encore assez de données sur cette période.");
+      return;
+    }
+
+    var last = points[points.length-1].value;
+    var first = points[0].value;
+    var delta = last - first;
+    var deltaStr = (delta > 0 ? "+" : "") + delta.toFixed(def.decimals);
+    var lastStr = last.toLocaleString("fr-FR", { maximumFractionDigits: def.decimals });
+
+    var headHtml2 = '<div class="chart-card-head">' +
+      '<span class="chart-card-title">'+def.icon+' '+def.label+'</span>' +
+      '<span style="text-align:right">' +
+        '<span class="chart-card-value">'+lastStr+' <small style="font-size:12px;font-weight:600;color:var(--ink-soft)">'+def.unit+'</small></span>' +
+        '<span class="chart-card-delta">'+deltaStr+' '+def.unit+' sur la période</span>' +
+      '</span>' +
+      '</div>';
+
+    container.innerHTML = headHtml2 + buildChartSVG(points, def.hex);
+  }
+
+  // ---------- courbe Poids + objectif ----------
+  var goalEditOpen = false;
+
+  function goalValueAt(timeMs){
+    var startMs = keyToDate(GOAL.startDate).getTime();
+    var endMs = keyToDate(GOAL.targetDate).getTime();
+    if(GOAL.startWeight == null || endMs === startMs) return GOAL.targetWeight;
+    var slope = (GOAL.targetWeight - GOAL.startWeight) / (endMs - startMs);
+    return GOAL.startWeight + slope * (timeMs - startMs);
+  }
+
+  function renderWeightChart(){
+    var def = METRIC_DEFS.weight;
+    var container = document.getElementById("chartWeight");
+    var points = getSeries("weight", chartRange);
+
+    var latestWeight = findLastKnownWeight(todayStr());
+    var goalLineHtml = "";
+    if(GOAL.startWeight != null){
+      var remaining = latestWeight != null ? (latestWeight - GOAL.targetWeight) : null;
+      var remainingStr = remaining == null ? "" :
+        (remaining > 0.05 ? " · encore " + remaining.toFixed(1) + " kg à perdre" :
+         remaining < -0.05 ? " · " + Math.abs(remaining).toFixed(1) + " kg sous l'objectif" :
+         " · objectif atteint 🎉");
+      goalLineHtml = '<p class="goal-recap">🎯 Objectif : ' + GOAL.targetWeight.toLocaleString("fr-FR") + ' kg pour le ' + formatLong(GOAL.targetDate) + remainingStr + '</p>';
+    }else{
+      goalLineHtml = '<p class="goal-recap">🎯 Objectif : ' + GOAL.targetWeight.toLocaleString("fr-FR") + ' kg pour le ' + formatLong(GOAL.targetDate) + ' · enregistre un poids pour suivre ta trajectoire</p>';
+    }
+
+    var editHtml = goalEditOpen ?
+      '<div class="goal-edit-form" id="goalEditForm">' +
+        '<label>Poids cible (kg)<input type="number" step="0.1" id="goalWeightInput" value="'+GOAL.targetWeight+'"></label>' +
+        '<label>Dans combien de mois ?<input type="number" step="1" id="goalMonthsInput" value="4"></label>' +
+        '<button id="goalSaveBtn">Enregistrer</button>' +
+      '</div>' :
+      '<button class="link-btn" id="goalEditToggle" style="padding-left:0">Modifier l\'objectif</button>';
+
+    var headHtmlBase = '<div class="chart-card-head"><span class="chart-card-title">'+def.icon+' '+def.label+'</span></div>';
+
+    if(points.length < 2){
+      container.innerHTML = headHtmlBase + emptyStateHtml("Pas encore assez de données sur cette période.") + goalLineHtml + editHtml;
+      bindGoalEditHandlers();
+      return;
+    }
+
+    var last = points[points.length-1].value;
+    var first = points[0].value;
+    var delta = last - first;
+    var deltaStr = (delta > 0 ? "+" : "") + delta.toFixed(def.decimals);
+    var lastStr = last.toLocaleString("fr-FR", { maximumFractionDigits: def.decimals });
+
+    var headHtml2 = '<div class="chart-card-head">' +
+      '<span class="chart-card-title">'+def.icon+' '+def.label+'</span>' +
+      '<span style="text-align:right">' +
+        '<span class="chart-card-value">'+lastStr+' <small style="font-size:12px;font-weight:600;color:var(--ink-soft)">'+def.unit+'</small></span>' +
+        '<span class="chart-card-delta">'+deltaStr+' '+def.unit+' sur la période</span>' +
+      '</span>' +
+      '</div>';
+
+    var extraLines = [];
+    if(GOAL.startWeight != null){
+      var domain = chartDomain(chartRange);
+      var xMinMs = domain.start ? keyToDate(domain.start).getTime() : points[0].date.getTime();
+      var xMaxMs = keyToDate(domain.end).getTime();
+      extraLines.push({
+        from: { date: new Date(xMinMs), value: goalValueAt(xMinMs) },
+        to: { date: new Date(xMaxMs), value: goalValueAt(xMaxMs) },
+        color: "#9B6FD1"
+      });
+    }
+
+    container.innerHTML = headHtml2 + buildChartSVG(points, def.hex, extraLines) + goalLineHtml + editHtml;
+    bindGoalEditHandlers();
+  }
+
+  function bindGoalEditHandlers(){
+    var toggle = document.getElementById("goalEditToggle");
+    if(toggle){
+      toggle.addEventListener("click", function(){
+        goalEditOpen = true;
+        renderWeightChart();
+      });
+    }
+    var saveBtn = document.getElementById("goalSaveBtn");
+    if(saveBtn){
+      saveBtn.addEventListener("click", function(){
+        var w = parseFloat(document.getElementById("goalWeightInput").value.replace(",", "."));
+        var months = parseInt(document.getElementById("goalMonthsInput").value, 10);
+        if(isNaN(w) || isNaN(months) || months < 1){
+          showToast("Vérifie les valeurs saisies");
+          return;
+        }
+        var today = todayStr();
+        saveGoal({
+          targetWeight: w,
+          targetDate: addMonths(today, months),
+          startWeight: findLastKnownWeight(today),
+          startDate: today
+        });
+        goalEditOpen = false;
+        showToast("Objectif mis à jour");
+        renderWeightChart();
+      });
+    }
+  }
+
+  function renderCharts(){
+    renderWeightChart();
+    renderChartCard("chartSteps", "steps");
+    renderChartCard("chartCalIn", "caloriesIn");
+    renderChartCard("chartDeficit", "deficit");
+  }
+
+  // ---------- corrélations ----------
+  function getPairs(metricA, metricB){
+    var keys = Object.keys(DB.entries).filter(function(k){
+      var e = DB.entries[k];
+      return getMetricValue(e, metricA) != null && getMetricValue(e, metricB) != null;
+    }).sort();
+    return {
+      xs: keys.map(function(k){ return getMetricValue(DB.entries[k], metricA); }),
+      ys: keys.map(function(k){ return getMetricValue(DB.entries[k], metricB); })
+    };
+  }
+
+  function strengthLabel(absR){
+    if(absR < 0.1) return "quasi nulle";
+    if(absR < 0.3) return "faible";
+    if(absR < 0.5) return "modérée";
+    if(absR < 0.7) return "assez forte";
+    if(absR < 0.9) return "forte";
+    return "très forte";
+  }
+
+  function buildScatterSVG(xs, ys, color){
+    var S = 96, P = 10;
+    var xMin = Math.min.apply(null, xs), xMax = Math.max.apply(null, xs);
+    var yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
+    var xPad = (xMax-xMin)*0.12 || 1, yPad = (yMax-yMin)*0.12 || 1;
+    var xLo = xMin-xPad, xHi = xMax+xPad, yLo = yMin-yPad, yHi = yMax+yPad;
+    function xScale(v){ return P + (v-xLo)/(xHi-xLo)*(S-2*P); }
+    function yScale(v){ return S-P - (v-yLo)/(yHi-yLo)*(S-2*P); }
+
+    var reg = linreg(xs, ys);
+    var rx1 = xLo, rx2 = xHi;
+    var ry1 = reg.slope*rx1 + reg.intercept;
+    var ry2 = reg.slope*rx2 + reg.intercept;
+
+    var dots = xs.map(function(x,i){
+      return '<circle cx="'+xScale(x)+'" cy="'+yScale(ys[i])+'" r="2.8" fill="'+color+'" opacity="0.75"/>';
+    }).join("");
+
+    return '<svg viewBox="0 0 '+S+' '+S+'">' +
+      '<rect x="0" y="0" width="'+S+'" height="'+S+'" rx="10" fill="#FAF8FD"/>' +
+      '<line x1="'+xScale(rx1)+'" y1="'+yScale(ry1)+'" x2="'+xScale(rx2)+'" y2="'+yScale(ry2)+'" stroke="'+color+'" stroke-width="1.6" opacity="0.5" stroke-dasharray="3,2"/>' +
+      dots +
+      '</svg>';
+  }
+
+  function renderCorrCard(containerId, metricA, metricB){
+    var defA = METRIC_DEFS[metricA], defB = METRIC_DEFS[metricB];
+    var container = document.getElementById(containerId);
+    var data = getPairs(metricA, metricB);
+    var n = data.xs.length;
+
+    var headHtml = '<div class="corr-head"><span class="corr-pair">'+defA.icon+' '+defA.label+' — '+defB.icon+' '+defB.label+'</span></div>';
+
+    if(n < 5){
+      container.innerHTML = headHtml + emptyStateHtml("Encore "+(5-n)+" jour(s) avec ces deux données à enregistrer pour voir le lien.");
+      return;
+    }
+
+    var r = pearson(data.xs, data.ys);
+    var pct = ((r+1)/2*100);
+    var barColor = r >= 0 ? defA.hex : defB.hex;
+    var sentence = "Lien "+strengthLabel(Math.abs(r))+" (r = "+r.toFixed(2)+") : "+defA.label.toLowerCase()+" et "+defB.label.toLowerCase()+(r>=0 ? " évoluent plutôt dans le même sens." : " évoluent plutôt en sens inverse.");
+
+    container.innerHTML = headHtml +
+      '<div class="corr-body">' +
+        buildScatterSVG(data.xs, data.ys, defA.hex) +
+        '<div style="flex:1">' +
+          '<span class="corr-r" style="color:'+barColor+'">'+(r>=0?"+":"")+r.toFixed(2)+'</span>' +
+          '<div class="corr-bar"><span class="corr-bar-mid"></span><span class="corr-bar-fill" style="left:'+(r>=0?50:pct)+'%;width:'+Math.abs(pct-50)+'%;background:'+barColor+'"></span></div>' +
+          '<p class="corr-text">'+sentence+'</p>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderCorrelations(){
+    renderCorrCard("corrWeightSteps", "weight", "steps");
+    renderCorrCard("corrWeightDeficit", "weight", "deficit");
+  }
+
+  // ---------- init ----------
+  function init(){
+    loadDB();
+    ensureGoal();
+    var name = getStoredName();
+    if(name){
+      userName = name;
+      updateGreeting();
+      renderToday({ autofocus:true });
+    }else{
+      onboardingEl.classList.remove("hidden");
+      setTimeout(function(){ onboardingInput.focus(); }, 200);
+      renderToday({ autofocus:false });
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
