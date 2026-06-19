@@ -18,7 +18,9 @@
     --card:#FFFFFF;
     --weight:#E8628C;
     --steps:#239E90;
-    --cal:#F2994A;
+    --cal-in:#F2994A;
+    --cal-out:#4FA8D8;
+    --deficit:#9B6FD1;
     --dawn-1:#C9B6E4;
     --dawn-2:#FFD3B0;
     --dawn-3:#AEDFF7;
@@ -72,42 +74,52 @@
   #skyDayRect{ transition:opacity .7s ease; }
   #sunCircle{ transition:cy .7s cubic-bezier(.22,.9,.3,1), fill .6s ease; }
   #rays{ transition:opacity .5s ease; }
-  .hero-status{ position:absolute; left:18px; bottom:14px; display:flex; gap:10px; }
-  .hero-chip{ display:flex; align-items:center; gap:5px; background:rgba(255,255,255,.55); backdrop-filter:blur(6px); border-radius:14px; padding:5px 9px; font-size:13px; font-weight:600; color:var(--ink); opacity:.55; transition:opacity .4s ease, background .4s ease; }
+  .hero-status{ position:absolute; left:18px; bottom:14px; display:flex; gap:8px; flex-wrap:wrap; }
+  .hero-chip{ display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.55); backdrop-filter:blur(6px); border-radius:14px; padding:5px 8px; font-size:12.5px; font-weight:600; color:var(--ink); opacity:.55; transition:opacity .4s ease, background .4s ease; }
   .hero-chip.done{ opacity:1; background:rgba(255,255,255,.85); }
   .hero-title{ position:absolute; top:14px; left:18px; right:18px; font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:#3a2f55; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
   /* ---------- Date nav ---------- */
-  .date-nav{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:16px; }
-  .date-nav button{ background:var(--card); border:none; width:34px; height:34px; border-radius:50%; font-size:17px; color:var(--ink); box-shadow:var(--shadow); cursor:pointer; }
+  .date-nav{ display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:16px; }
+  .date-nav button{ background:var(--card); border:none; width:34px; height:34px; border-radius:50%; font-size:16px; color:var(--ink); box-shadow:var(--shadow); cursor:pointer; flex-shrink:0; }
   .date-nav button:disabled{ opacity:.25; }
-  .date-label{ font-family:'Fraunces',serif; font-weight:600; font-size:16px; text-transform:capitalize; min-width:175px; text-align:center; }
+  .date-label{ font-family:'Fraunces',serif; font-weight:600; font-size:15.5px; text-transform:capitalize; min-width:150px; text-align:center; }
 
-  /* ---------- Step wizard ---------- */
-  .step-dots{ display:flex; justify-content:center; gap:8px; margin-bottom:16px; }
-  .step-dot{ width:8px; height:8px; border-radius:50%; background:#E3D9F0; transition:width .3s ease, background .3s ease; }
-  .step-dot.active{ width:24px; border-radius:5px; background:var(--ink); }
-  .step-dot.filled:not(.active){ background:#C9B6E4; }
+  /* ---------- Direct entry grid (sans clic) ---------- */
+  .entry-card{ background:transparent; }
+  .field-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field-tile{ background:var(--card); border-radius:18px; padding:16px 8px 14px; display:flex; flex-direction:column; align-items:center; gap:5px; box-shadow:var(--shadow); border-bottom:3px solid var(--accent); }
+  .field-tile[data-field="weight"]{ --accent:var(--weight); }
+  .field-tile[data-field="steps"]{ --accent:var(--steps); }
+  .field-tile[data-field="calIn"]{ --accent:var(--cal-in); }
+  .field-tile[data-field="calOut"]{ --accent:var(--cal-out); }
+  .field-icon{ font-size:26px; }
+  .field-label{ font-size:11px; font-weight:600; color:var(--ink-soft); text-align:center; line-height:1.2; min-height:26px; display:flex; align-items:center; }
+  .field-input-row{ display:flex; align-items:baseline; gap:4px; border-bottom:2px solid #EEE7F5; padding-bottom:4px; }
+  .field-input-row input{ width:72px; text-align:center; border:none; background:transparent; font-family:'Outfit'; font-weight:700; font-size:21px; color:var(--ink); outline:none; -webkit-appearance:none; padding:0; }
+  .field-input-row input::placeholder{ color:#D5CCE3; font-weight:600; }
+  .field-input-row input::-webkit-outer-spin-button,
+  .field-input-row input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .unit{ font-size:11px; color:var(--ink-soft); font-weight:500; white-space:nowrap; }
 
-  .entry-card{ background:var(--card); border-radius:var(--radius); padding:26px 0 22px; box-shadow:var(--shadow); }
-  .step-viewport{ overflow:hidden; }
-  .step-track{ display:flex; width:400%; transition:transform .45s cubic-bezier(.65,0,.35,1); }
-  .step-panel{ width:25%; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:14px; padding:0 26px; text-align:center; }
-  .step-icon{ font-size:42px; line-height:1; }
-  .step-name{ font-family:'Fraunces',serif; font-weight:600; font-size:18px; color:var(--ink); margin:0; }
-  .step-input-wrap{ display:flex; align-items:baseline; justify-content:center; gap:8px; border-bottom:2px solid #EEE7F5; padding-bottom:10px; width:100%; max-width:220px; }
-  .step-panel[data-step="0"] .step-input-wrap{ border-color:#F4D6E0; }
-  .step-panel[data-step="1"] .step-input-wrap{ border-color:#D3ECE8; }
-  .step-panel[data-step="2"] .step-input-wrap{ border-color:#FBE3CC; }
-  .step-input-wrap input{ width:100%; text-align:center; border:none; background:transparent; font-family:'Outfit'; font-weight:700; font-size:32px; color:var(--ink); -webkit-appearance:none; outline:none; min-width:0; padding:0; }
-  .step-input-wrap input::placeholder{ color:#D5CCE3; font-weight:600; }
-  .step-input-wrap input::-webkit-outer-spin-button,
-  .step-input-wrap input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
-  .unit{ font-size:13px; color:var(--ink-soft); font-weight:500; white-space:nowrap; }
-  .step-btn{ width:100%; max-width:220px; }
-
-  .success-panel .check-circle{ width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,var(--dawn-1),var(--dawn-2)); display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:2px; }
-  .success-recap{ font-size:14px; color:var(--ink-soft); line-height:1.7; min-height:24px; }
+  /* ---------- Calendrier ---------- */
+  .calendar-overlay{ position:fixed; inset:0; z-index:180; background:rgba(20,16,30,.45); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .calendar-overlay.hidden{ display:none; }
+  .calendar-card{ background:#fff; border-radius:22px; padding:20px; max-width:300px; width:100%; box-shadow:var(--shadow); }
+  .calendar-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .calendar-head button{ background:var(--bg); border:none; width:30px; height:30px; border-radius:50%; font-size:15px; cursor:pointer; }
+  .calendar-head button:disabled{ opacity:.25; }
+  .calendar-head span{ font-family:'Fraunces',serif; font-weight:600; font-size:15px; text-transform:capitalize; }
+  .calendar-weekdays{ display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:11px; color:var(--ink-soft); font-weight:600; margin-bottom:6px; }
+  .calendar-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal-day{ aspect-ratio:1; border:none; background:none; border-radius:50%; font-size:13px; font-weight:600; color:var(--ink); cursor:pointer; position:relative; font-family:'Outfit'; }
+  .cal-day.empty{ visibility:hidden; cursor:default; }
+  .cal-day.today{ box-shadow:inset 0 0 0 2px var(--dawn-1); }
+  .cal-day.selected{ background:var(--ink); color:#fff; }
+  .cal-day.future{ opacity:.25; cursor:default; }
+  .cal-day.has-entry::after{ content:""; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--dawn-1); }
+  .cal-day.selected.has-entry::after{ background:#fff; }
+  .calendar-card .link-btn{ display:block; margin:14px auto 0; }
 
   .btn-primary{ background:linear-gradient(135deg,var(--dawn-1),var(--dawn-2)); color:#3a2f55; border:none; border-radius:16px; padding:14px; font-family:'Outfit'; font-weight:700; font-size:15.5px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s ease; }
   .btn-primary:active{ transform:scale(.97); }
@@ -134,6 +146,11 @@
   .chart-card-delta{ font-size:11.5px; font-weight:600; color:var(--ink-soft); text-align:right; display:block; }
   .chart-card svg{ width:100%; height:auto; display:block; margin-top:6px; }
   .axis-label{ font-size:10px; fill:var(--ink-soft); font-family:'Outfit'; }
+  .goal-recap{ font-size:12px; color:var(--ink-soft); margin:6px 0 0; line-height:1.5; }
+  .goal-edit-form{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:flex-end; }
+  .goal-edit-form label{ display:flex; flex-direction:column; font-size:10.5px; color:var(--ink-soft); gap:3px; }
+  .goal-edit-form input{ width:74px; border:1px solid #EEE7F5; border-radius:8px; padding:6px 8px; font-family:'Outfit'; font-size:13.5px; }
+  .goal-edit-form button{ background:var(--ink); color:#fff; border:none; border-radius:8px; padding:7px 12px; font-size:12.5px; font-weight:700; cursor:pointer; }
 
   .empty-state{ text-align:center; padding:34px 14px; color:var(--ink-soft); font-size:13.5px; line-height:1.5; }
   .empty-state .emoji{ font-size:32px; display:block; margin-bottom:8px; }
@@ -172,6 +189,21 @@
   </div>
 </div>
 
+<div class="calendar-overlay hidden" id="calendarOverlay">
+  <div class="calendar-card">
+    <div class="calendar-head">
+      <button id="calPrevMonth" aria-label="Mois précédent">‹</button>
+      <span id="calMonthLabel">—</span>
+      <button id="calNextMonth" aria-label="Mois suivant">›</button>
+    </div>
+    <div class="calendar-weekdays">
+      <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <button class="link-btn" id="calClose">Fermer</button>
+  </div>
+</div>
+
 <div class="app">
 
   <!-- ===== TODAY VIEW ===== -->
@@ -206,7 +238,8 @@
       <div class="hero-status">
         <div class="hero-chip" id="chipWeight">⚖️</div>
         <div class="hero-chip" id="chipSteps">👟</div>
-        <div class="hero-chip" id="chipCal">🔥</div>
+        <div class="hero-chip" id="chipCalIn">🍽️</div>
+        <div class="hero-chip" id="chipCalOut">⌚</div>
       </div>
     </section>
 
@@ -214,56 +247,48 @@
       <button id="prevDay" aria-label="Jour précédent">‹</button>
       <div class="date-label" id="dateLabel">—</div>
       <button id="nextDay" aria-label="Jour suivant">›</button>
+      <button id="openCalendar" aria-label="Choisir une date">📅</button>
     </section>
 
-    <div class="step-dots" id="stepDots" aria-hidden="true">
-      <span class="step-dot" data-dot="0"></span>
-      <span class="step-dot" data-dot="1"></span>
-      <span class="step-dot" data-dot="2"></span>
-    </div>
-
     <section class="entry-card">
-      <div class="step-viewport">
-        <div class="step-track" id="stepTrack">
+      <div class="field-grid">
 
-          <div class="step-panel" data-step="0">
-            <span class="step-icon">⚖️</span>
-            <p class="step-name">Ton poids</p>
-            <div class="step-input-wrap">
-              <input id="stepInputWeight" type="number" inputmode="decimal" step="0.1" placeholder="ex : 62.5" enterkeyhint="next">
-              <span class="unit">kg</span>
-            </div>
-            <button class="btn-primary step-btn" id="btnStepWeight">Valider</button>
+        <div class="field-tile" data-field="weight">
+          <span class="field-icon">⚖️</span>
+          <span class="field-label">Poids</span>
+          <div class="field-input-row">
+            <input id="fieldWeight" type="number" inputmode="decimal" step="0.1" placeholder="—" enterkeyhint="done">
+            <span class="unit">kg</span>
           </div>
-
-          <div class="step-panel" data-step="1">
-            <span class="step-icon">👟</span>
-            <p class="step-name">Tes pas</p>
-            <div class="step-input-wrap">
-              <input id="stepInputSteps" type="number" inputmode="numeric" step="1" placeholder="ex : 8000" enterkeyhint="next">
-              <span class="unit">pas</span>
-            </div>
-            <button class="btn-primary step-btn" id="btnStepSteps">Valider</button>
-          </div>
-
-          <div class="step-panel" data-step="2">
-            <span class="step-icon">🔥</span>
-            <p class="step-name">Tes calories</p>
-            <div class="step-input-wrap">
-              <input id="stepInputCalories" type="number" inputmode="numeric" step="1" placeholder="ex : 1800" enterkeyhint="done">
-              <span class="unit">kcal</span>
-            </div>
-            <button class="btn-primary step-btn" id="btnStepCalories">Terminer</button>
-          </div>
-
-          <div class="step-panel success-panel" data-step="3">
-            <div class="check-circle">✓</div>
-            <p class="step-name">C'est noté</p>
-            <p class="success-recap" id="successRecap"></p>
-            <button class="link-btn" id="btnEditAgain">Modifier</button>
-          </div>
-
         </div>
+
+        <div class="field-tile" data-field="steps">
+          <span class="field-icon">👟</span>
+          <span class="field-label">Pas</span>
+          <div class="field-input-row">
+            <input id="fieldSteps" type="number" inputmode="numeric" step="1" placeholder="—" enterkeyhint="done">
+            <span class="unit">pas</span>
+          </div>
+        </div>
+
+        <div class="field-tile" data-field="calIn">
+          <span class="field-icon">🍽️</span>
+          <span class="field-label">Calories ingérées</span>
+          <div class="field-input-row">
+            <input id="fieldCalIn" type="number" inputmode="numeric" step="1" placeholder="—" enterkeyhint="done">
+            <span class="unit">kcal</span>
+          </div>
+        </div>
+
+        <div class="field-tile" data-field="calOut">
+          <span class="field-icon">⌚</span>
+          <span class="field-label">Calories brûlées</span>
+          <div class="field-input-row">
+            <input id="fieldCalOut" type="number" inputmode="numeric" step="1" placeholder="—" enterkeyhint="done">
+            <span class="unit">kcal</span>
+          </div>
+        </div>
+
       </div>
     </section>
   </main>
@@ -271,16 +296,18 @@
   <!-- ===== CHARTS VIEW ===== -->
   <main id="view-charts" class="view hidden">
     <h1 class="section-title">Courbes</h1>
-    <p class="section-sub">La ligne pointillée montre la tendance lissée sur 7 jours.</p>
+    <p class="section-sub">La ligne pointillée fine montre la tendance lissée sur 7 jours.</p>
     <div class="range-pills" id="rangePills">
       <button class="pill active" data-range="7">7 j</button>
       <button class="pill" data-range="30">30 j</button>
       <button class="pill" data-range="90">90 j</button>
+      <button class="pill" data-range="120">4 mois</button>
       <button class="pill" data-range="all">Tout</button>
     </div>
     <div id="chartWeight" class="chart-card"></div>
     <div id="chartSteps" class="chart-card"></div>
-    <div id="chartCalories" class="chart-card"></div>
+    <div id="chartCalIn" class="chart-card"></div>
+    <div id="chartDeficit" class="chart-card"></div>
   </main>
 
   <!-- ===== CORRELATIONS VIEW ===== -->
@@ -288,7 +315,7 @@
     <h1 class="section-title">Liens entre tes données</h1>
     <p class="section-sub">Calculé sur tous les jours où les deux données existent.</p>
     <div id="corrWeightSteps" class="corr-card"></div>
-    <div id="corrWeightCal" class="corr-card"></div>
+    <div id="corrWeightDeficit" class="corr-card"></div>
     <p class="disclaimer">Une corrélation indique que deux choses évoluent ensemble — pas que l'une cause l'autre. 🙂</p>
   </main>
 
@@ -307,12 +334,15 @@
 
   var DATA_KEY = "tracker-data-v1";
   var NAME_KEY = "tracker-user-name";
+  var GOAL_KEY = "tracker-goal-v1";
+  var BASE_METABOLISM = 1200; // (C) calories totales estimées = calories brûlées (montre) + cette base
   var DB = { entries: {} };
+  var GOAL = null;
   var userName = "";
   var currentDate = todayStr();
   var activeTab = "today";
-  var chartRange = 7; // number of days, or Infinity
-  var stepIndex = 0;
+  var chartRange = 7; // nombre de jours, ou Infinity
+  var calViewYear, calViewMonth;
 
   // ---------- date helpers ----------
   function pad(n){ return n.toString().padStart(2,"0"); }
@@ -325,6 +355,11 @@
   function addDays(dateStr, delta){
     var d = keyToDate(dateStr);
     d.setDate(d.getDate()+delta);
+    return toKey(d);
+  }
+  function addMonths(dateStr, n){
+    var d = keyToDate(dateStr);
+    d.setMonth(d.getMonth()+n);
     return toKey(d);
   }
   function isToday(dateStr){ return dateStr === todayStr(); }
@@ -340,8 +375,24 @@
     var d = keyToDate(dateStr);
     return d.toLocaleDateString("fr-FR", { day:"numeric", month:"short" });
   }
+  function formatLong(dateStr){
+    var d = keyToDate(dateStr);
+    return d.toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" });
+  }
 
-  // ---------- storage (navigateur, fonctionne une fois le site déployé) ----------
+  // ---------- formule calories (A ingérées, B brûlées, C totales estimées, D déficit) ----------
+  function getMetricValue(entry, metric){
+    if(!entry) return null;
+    if(metric === "deficit"){
+      if(entry.caloriesIn == null || entry.caloriesBurned == null) return null;
+      var c = entry.caloriesBurned + BASE_METABOLISM;
+      return entry.caloriesIn - c;
+    }
+    var v = entry[metric];
+    return v == null ? null : v;
+  }
+
+  // ---------- storage ----------
   function loadDB(){
     try{
       var raw = localStorage.getItem(DATA_KEY);
@@ -350,6 +401,19 @@
         if(parsed && parsed.entries) DB = parsed;
       }
     }catch(e){ DB = { entries:{} }; }
+    var migrated = false;
+    Object.keys(DB.entries).forEach(function(k){
+      var e = DB.entries[k];
+      if(e.calories != null && e.caloriesIn == null){
+        e.caloriesIn = e.calories;
+        migrated = true;
+      }
+      if(e.calories != null){
+        delete e.calories;
+        migrated = true;
+      }
+    });
+    if(migrated) persistDB();
   }
   function persistDB(){
     try{
@@ -364,6 +428,31 @@
   }
   function setStoredName(name){
     try{ localStorage.setItem(NAME_KEY, name); }catch(e){}
+  }
+  function loadGoal(){
+    try{
+      var raw = localStorage.getItem(GOAL_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return null;
+  }
+  function saveGoal(g){
+    GOAL = g;
+    try{ localStorage.setItem(GOAL_KEY, JSON.stringify(g)); }catch(e){}
+  }
+  function ensureGoal(){
+    var g = loadGoal();
+    if(!g){
+      var start = todayStr();
+      g = {
+        targetWeight: 60,
+        targetDate: addMonths(start, 4),
+        startWeight: findLastKnownWeight(start),
+        startDate: start
+      };
+      saveGoal(g);
+    }
+    GOAL = g;
   }
 
   // ---------- haptique ----------
@@ -383,15 +472,13 @@
     toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 1800);
   }
 
-  // ---------- onboarding (prénom à la première connexion) ----------
+  // ---------- onboarding ----------
   var onboardingEl = document.getElementById("onboarding");
   var onboardingInput = document.getElementById("onboardingInput");
   var onboardingSubmit = document.getElementById("onboardingSubmit");
   var heroTitle = document.getElementById("heroTitle");
 
-  function capitalize(s){
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  }
+  function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
   function updateGreeting(){
     heroTitle.textContent = userName ? ("Bonjour " + userName + " 🌷") : "Bonjour 🌷";
   }
@@ -419,7 +506,8 @@
   var rays = document.getElementById("rays");
   var chipWeight = document.getElementById("chipWeight");
   var chipSteps = document.getElementById("chipSteps");
-  var chipCal = document.getElementById("chipCal");
+  var chipCalIn = document.getElementById("chipCalIn");
+  var chipCalOut = document.getElementById("chipCalOut");
 
   function lerp(a,b,t){ return a + (b-a)*t; }
   function hexToRgb(hex){
@@ -436,13 +524,13 @@
 
   function currentFillCount(){
     var entry = DB.entries[currentDate] || {};
-    var filled = [entry.weight!=null, entry.steps!=null, entry.calories!=null];
+    var filled = [entry.weight!=null, entry.steps!=null, entry.caloriesIn!=null, entry.caloriesBurned!=null];
     return { filled: filled, count: filled.filter(Boolean).length };
   }
 
   function updateSunHero(){
     var f = currentFillCount();
-    var progress = f.count/3;
+    var progress = f.count/4;
 
     skyDayRect.style.opacity = progress;
     sunCircle.setAttribute("cy", (152 - progress*120).toString());
@@ -451,113 +539,51 @@
 
     chipWeight.classList.toggle("done", f.filled[0]);
     chipSteps.classList.toggle("done", f.filled[1]);
-    chipCal.classList.toggle("done", f.filled[2]);
+    chipCalIn.classList.toggle("done", f.filled[2]);
+    chipCalOut.classList.toggle("done", f.filled[3]);
   }
 
-  // ---------- step wizard ----------
-  var stepTrack = document.getElementById("stepTrack");
-  var stepDots = document.querySelectorAll(".step-dot");
-  var inputWeight = document.getElementById("stepInputWeight");
-  var inputSteps = document.getElementById("stepInputSteps");
-  var inputCalories = document.getElementById("stepInputCalories");
-  var btnStepWeight = document.getElementById("btnStepWeight");
-  var btnStepSteps = document.getElementById("btnStepSteps");
-  var btnStepCalories = document.getElementById("btnStepCalories");
-  var btnEditAgain = document.getElementById("btnEditAgain");
-  var successRecap = document.getElementById("successRecap");
+  // ---------- saisie directe (sans clic) ----------
+  var fieldWeight = document.getElementById("fieldWeight");
+  var fieldSteps = document.getElementById("fieldSteps");
+  var fieldCalIn = document.getElementById("fieldCalIn");
+  var fieldCalOut = document.getElementById("fieldCalOut");
+  var FIELDS = [
+    { key:"weight", el:fieldWeight, isFloat:true },
+    { key:"steps", el:fieldSteps, isFloat:false },
+    { key:"caloriesIn", el:fieldCalIn, isFloat:false },
+    { key:"caloriesBurned", el:fieldCalOut, isFloat:false }
+  ];
 
-  function updateDots(i){
-    stepDots.forEach(function(dot, idx){
-      dot.classList.toggle("active", idx === i);
-      dot.classList.toggle("filled", i === 3 ? true : idx < i);
-    });
-  }
-
-  function goToStep(i, opts){
-    opts = opts || {};
-    var animate = opts.animate !== false;
-    var autofocus = opts.autofocus !== false;
-    stepIndex = i;
-
-    if(!animate) stepTrack.style.transition = "none";
-    stepTrack.style.transform = "translateX(-" + (i*25) + "%)";
-    if(!animate){
-      void stepTrack.offsetHeight; // force reflow
-      stepTrack.style.transition = "";
-    }
-    updateDots(i);
-
-    if(autofocus && i < 3){
-      var ids = [inputWeight, inputSteps, inputCalories];
-      var delay = animate ? 400 : 0;
-      setTimeout(function(){ ids[i].focus(); }, delay);
-    }
-  }
-
-  function firstUnfilledStep(entry){
-    if(entry.weight == null) return 0;
-    if(entry.steps == null) return 1;
-    if(entry.calories == null) return 2;
-    return 3;
-  }
-
-  function commitField(field, inputEl){
-    var raw = inputEl.value.trim();
-    if(raw === "") return; // rien saisi : on n'écrase rien, on avance simplement
+  function commitField(field){
+    var raw = field.el.value.trim();
     var entry = DB.entries[currentDate] || {};
-    if(field === "weight"){
-      var w = parseFloat(raw.replace(",", "."));
-      if(!isNaN(w)) entry.weight = w;
+    var changed = false;
+    if(raw === ""){
+      if(entry[field.key] != null){ delete entry[field.key]; changed = true; }
     }else{
-      var v = parseInt(raw, 10);
-      if(!isNaN(v)) entry[field] = v;
+      var val = field.isFloat ? parseFloat(raw.replace(",", ".")) : parseInt(raw, 10);
+      if(!isNaN(val) && entry[field.key] !== val){ entry[field.key] = val; changed = true; }
     }
-    DB.entries[currentDate] = entry;
-    persistDB();
-    updateSunHero();
+    if(Object.keys(entry).length === 0){
+      delete DB.entries[currentDate];
+    }else{
+      DB.entries[currentDate] = entry;
+    }
+    if(changed){
+      persistDB();
+      vibrate(18);
+      updateSunHero();
+      if(activeTab === "charts") renderCharts();
+      if(activeTab === "corr") renderCorrelations();
+    }
   }
 
-  function renderSuccessRecap(){
-    var entry = DB.entries[currentDate] || {};
-    var parts = [];
-    if(entry.weight != null) parts.push("⚖️ " + entry.weight.toLocaleString("fr-FR") + " kg");
-    if(entry.steps != null) parts.push("👟 " + entry.steps.toLocaleString("fr-FR") + " pas");
-    if(entry.calories != null) parts.push("🔥 " + entry.calories.toLocaleString("fr-FR") + " kcal");
-    successRecap.textContent = parts.length ? parts.join(" · ") : "Rien d'enregistré ce jour-là.";
-  }
-
-  btnStepWeight.addEventListener("click", function(){
-    commitField("weight", inputWeight);
-    vibrate(20);
-    goToStep(1);
-  });
-  btnStepSteps.addEventListener("click", function(){
-    commitField("steps", inputSteps);
-    vibrate(20);
-    goToStep(2);
-  });
-  btnStepCalories.addEventListener("click", function(){
-    commitField("calories", inputCalories);
-    vibrate([20, 40, 20]);
-    goToStep(3);
-    renderSuccessRecap();
-    showToast("Enregistré ✓");
-    if(activeTab === "charts") renderCharts();
-    if(activeTab === "corr") renderCorrelations();
-  });
-  btnEditAgain.addEventListener("click", function(){
-    goToStep(0);
-  });
-
-  var stepInputsInOrder = [inputWeight, inputSteps, inputCalories];
-  var stepButtonsInOrder = [btnStepWeight, btnStepSteps, btnStepCalories];
-  stepInputsInOrder.forEach(function(inp, idx){
-    inp.addEventListener("focus", function(){ inp.select(); });
-    inp.addEventListener("keydown", function(e){
-      if(e.key === "Enter" || e.key === "Go" || e.key === "Done"){
-        e.preventDefault();
-        stepButtonsInOrder[idx].click();
-      }
+  FIELDS.forEach(function(field){
+    field.el.addEventListener("focus", function(){ field.el.select(); });
+    field.el.addEventListener("blur", function(){ commitField(field); });
+    field.el.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){ e.preventDefault(); field.el.blur(); }
     });
   });
 
@@ -574,6 +600,16 @@
     return DB.entries[dates[dates.length-1]].weight;
   }
 
+  function focusFirstEmpty(entry){
+    for(var i=0;i<FIELDS.length;i++){
+      var key = FIELDS[i].key;
+      if(entry[key] == null){
+        setTimeout(function(el){ return function(){ el.focus(); }; }(FIELDS[i].el), 200);
+        return;
+      }
+    }
+  }
+
   function renderToday(opts){
     opts = opts || {};
     dateLabel.textContent = formatDateLabel(currentDate);
@@ -588,15 +624,14 @@
     }else{
       weightValue = entry.weight != null ? entry.weight : "";
     }
-    inputWeight.value = weightValue;
-    inputSteps.value = entry.steps != null ? entry.steps : "";
-    inputCalories.value = entry.calories != null ? entry.calories : "";
+    fieldWeight.value = weightValue;
+    fieldSteps.value = entry.steps != null ? entry.steps : "";
+    fieldCalIn.value = entry.caloriesIn != null ? entry.caloriesIn : "";
+    fieldCalOut.value = entry.caloriesBurned != null ? entry.caloriesBurned : "";
 
     updateSunHero();
 
-    var start = firstUnfilledStep(entry);
-    goToStep(start, { animate:false, autofocus: !!opts.autofocus });
-    if(start === 3) renderSuccessRecap();
+    if(opts.autofocus) focusFirstEmpty(entry);
   }
 
   prevDayBtn.addEventListener("click", function(){
@@ -608,6 +643,77 @@
       currentDate = addDays(currentDate, 1);
       renderToday({ autofocus:false });
     }
+  });
+
+  // ---------- calendrier ----------
+  var calendarOverlay = document.getElementById("calendarOverlay");
+  var calMonthLabel = document.getElementById("calMonthLabel");
+  var calendarGrid = document.getElementById("calendarGrid");
+  var calPrevMonth = document.getElementById("calPrevMonth");
+  var calNextMonth = document.getElementById("calNextMonth");
+  var MONTH_NAMES = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+
+  function hasAnyData(key){
+    var e = DB.entries[key];
+    if(!e) return false;
+    return e.weight != null || e.steps != null || e.caloriesIn != null || e.caloriesBurned != null;
+  }
+
+  function renderCalendar(){
+    var first = new Date(calViewYear, calViewMonth, 1);
+    var startOffset = (first.getDay() + 6) % 7; // lundi = 0
+    var daysInMonth = new Date(calViewYear, calViewMonth+1, 0).getDate();
+    calMonthLabel.textContent = MONTH_NAMES[calViewMonth] + " " + calViewYear;
+
+    var today = todayStr();
+    var todayD = keyToDate(today);
+    var isCurrentMonthView = (calViewYear === todayD.getFullYear() && calViewMonth === todayD.getMonth());
+    calNextMonth.disabled = isCurrentMonthView;
+
+    var html = "";
+    for(var i=0;i<startOffset;i++) html += '<button class="cal-day empty" disabled></button>';
+    for(var day=1; day<=daysInMonth; day++){
+      var d2 = new Date(calViewYear, calViewMonth, day);
+      var key = toKey(d2);
+      var classes = "cal-day";
+      if(key === today) classes += " today";
+      if(key === currentDate) classes += " selected";
+      var isFuture = key > today;
+      if(isFuture) classes += " future";
+      if(hasAnyData(key)) classes += " has-entry";
+      html += '<button class="'+classes+'" data-key="'+key+'"'+(isFuture ? " disabled" : "")+'>'+day+'</button>';
+    }
+    calendarGrid.innerHTML = html;
+    calendarGrid.querySelectorAll(".cal-day:not(.empty):not(.future)").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        currentDate = btn.dataset.key;
+        closeCalendar();
+        renderToday({ autofocus:false });
+      });
+    });
+  }
+  function openCalendar(){
+    var d = keyToDate(currentDate);
+    calViewYear = d.getFullYear();
+    calViewMonth = d.getMonth();
+    renderCalendar();
+    calendarOverlay.classList.remove("hidden");
+  }
+  function closeCalendar(){
+    calendarOverlay.classList.add("hidden");
+  }
+  document.getElementById("openCalendar").addEventListener("click", openCalendar);
+  document.getElementById("calClose").addEventListener("click", closeCalendar);
+  calPrevMonth.addEventListener("click", function(){
+    calViewMonth--;
+    if(calViewMonth < 0){ calViewMonth = 11; calViewYear--; }
+    renderCalendar();
+  });
+  calNextMonth.addEventListener("click", function(){
+    if(calNextMonth.disabled) return;
+    calViewMonth++;
+    if(calViewMonth > 11){ calViewMonth = 0; calViewYear++; }
+    renderCalendar();
   });
 
   // ---------- tabs ----------
@@ -691,21 +797,41 @@
 
   function getSeries(metric, rangeDays){
     var keys = Object.keys(DB.entries).filter(function(k){
-      return DB.entries[k][metric] != null;
+      return getMetricValue(DB.entries[k], metric) != null;
     }).sort();
     if(rangeDays !== Infinity){
       var cutoff = addDays(todayStr(), -(rangeDays-1));
       keys = keys.filter(function(k){ return k >= cutoff; });
     }
-    return keys.map(function(k){ return { key:k, date: keyToDate(k), value: DB.entries[k][metric] }; });
+    return keys.map(function(k){ return { key:k, date: keyToDate(k), value: getMetricValue(DB.entries[k], metric) }; });
   }
 
-  function buildChartSVG(points, color){
+  function chartDomain(rangeDays){
+    var today = todayStr();
+    var start = rangeDays === Infinity ? null : addDays(today, -(rangeDays-1));
+    return { start: start, end: today };
+  }
+
+  function emptyStateHtml(msg){
+    return '<div class="empty-state"><span class="emoji">🌱</span>' + msg + '</div>';
+  }
+
+  var METRIC_DEFS = {
+    weight: { label:"Poids", icon:"⚖️", unit:"kg", hex:"#E8628C", decimals:1 },
+    steps: { label:"Pas", icon:"👟", unit:"pas", hex:"#239E90", decimals:0 },
+    caloriesIn: { label:"Calories ingérées", icon:"🍽️", unit:"kcal", hex:"#F2994A", decimals:0 },
+    caloriesBurned: { label:"Calories brûlées", icon:"⌚", unit:"kcal", hex:"#4FA8D8", decimals:0 },
+    deficit: { label:"Déficit estimé", icon:"📉", unit:"kcal", hex:"#9B6FD1", decimals:0 }
+  };
+
+  function buildChartSVG(points, color, extraLines){
+    extraLines = extraLines || [];
     var xs = points.map(function(p){ return p.date.getTime(); });
     var ys = points.map(function(p){ return p.value; });
+    var allYs = ys.concat(extraLines.reduce(function(acc,l){ return acc.concat([l.from.value, l.to.value]); }, []));
     var xMin = Math.min.apply(null, xs), xMax = Math.max.apply(null, xs);
-    var yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
-    var yPad = (yMax - yMin) * 0.2 || Math.max(1, yMax*0.1);
+    var yMin = Math.min.apply(null, allYs), yMax = Math.max.apply(null, allYs);
+    var yPad = (yMax - yMin) * 0.2 || Math.max(1, Math.abs(yMax)*0.1, 1);
     var yLo = yMin - yPad, yHi = yMax + yPad;
     var w = CHART_W - PAD.l - PAD.r, h = CHART_H - PAD.t - PAD.b;
 
@@ -730,12 +856,19 @@
     var startLabel = formatShort(points[0].key);
     var endLabel = formatShort(points[points.length-1].key);
 
+    var extraHtml = extraLines.map(function(l){
+      var x1 = xScale(l.from.date.getTime()), y1 = yScale(l.from.value);
+      var x2 = xScale(l.to.date.getTime()), y2 = yScale(l.to.value);
+      return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+l.color+'" stroke-width="1.8" stroke-dasharray="2,4" stroke-linecap="round" opacity="0.85"/>';
+    }).join("");
+
     return '<svg viewBox="0 0 '+CHART_W+' '+CHART_H+'" preserveAspectRatio="none">' +
       '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0%" stop-color="'+color+'" stop-opacity="0.28"/>' +
       '<stop offset="100%" stop-color="'+color+'" stop-opacity="0"/>' +
       '</linearGradient></defs>' +
       (areaPath ? '<path d="'+areaPath+'" fill="url(#'+gradId+')" stroke="none"/>' : "") +
+      extraHtml +
       (maPath ? '<path d="'+maPath+'" fill="none" stroke="'+color+'" stroke-width="1.6" stroke-dasharray="4,3" opacity="0.55"/>' : "") +
       '<path d="'+linePath+'" fill="none" stroke="'+color+'" stroke-width="2.4" stroke-linecap="round"/>' +
       dotsHtml +
@@ -743,16 +876,6 @@
       '<text class="axis-label" x="'+(CHART_W-PAD.r)+'" y="'+CHART_H+'" text-anchor="end">'+endLabel+'</text>' +
       '</svg>';
   }
-
-  function emptyStateHtml(msg){
-    return '<div class="empty-state"><span class="emoji">🌱</span>' + msg + '</div>';
-  }
-
-  var METRIC_DEFS = {
-    weight: { label:"Poids", icon:"⚖️", unit:"kg", hex:"#E8628C", decimals:1 },
-    steps: { label:"Pas", icon:"👟", unit:"pas", hex:"#239E90", decimals:0 },
-    calories: { label:"Calories", icon:"🔥", unit:"kcal", hex:"#F2994A", decimals:0 }
-  };
 
   function renderChartCard(containerId, metric){
     var def = METRIC_DEFS[metric];
@@ -782,21 +905,128 @@
     container.innerHTML = headHtml2 + buildChartSVG(points, def.hex);
   }
 
-  function renderCharts(){
-    renderChartCard("chartWeight", "weight");
-    renderChartCard("chartSteps", "steps");
-    renderChartCard("chartCalories", "calories");
+  // ---------- courbe Poids + objectif ----------
+  var goalEditOpen = false;
+
+  function goalValueAt(timeMs){
+    var startMs = keyToDate(GOAL.startDate).getTime();
+    var endMs = keyToDate(GOAL.targetDate).getTime();
+    if(GOAL.startWeight == null || endMs === startMs) return GOAL.targetWeight;
+    var slope = (GOAL.targetWeight - GOAL.startWeight) / (endMs - startMs);
+    return GOAL.startWeight + slope * (timeMs - startMs);
   }
 
-  // ---------- correlations ----------
+  function renderWeightChart(){
+    var def = METRIC_DEFS.weight;
+    var container = document.getElementById("chartWeight");
+    var points = getSeries("weight", chartRange);
+
+    var latestWeight = findLastKnownWeight(todayStr());
+    var goalLineHtml = "";
+    if(GOAL.startWeight != null){
+      var remaining = latestWeight != null ? (latestWeight - GOAL.targetWeight) : null;
+      var remainingStr = remaining == null ? "" :
+        (remaining > 0.05 ? " · encore " + remaining.toFixed(1) + " kg à perdre" :
+         remaining < -0.05 ? " · " + Math.abs(remaining).toFixed(1) + " kg sous l'objectif" :
+         " · objectif atteint 🎉");
+      goalLineHtml = '<p class="goal-recap">🎯 Objectif : ' + GOAL.targetWeight.toLocaleString("fr-FR") + ' kg pour le ' + formatLong(GOAL.targetDate) + remainingStr + '</p>';
+    }else{
+      goalLineHtml = '<p class="goal-recap">🎯 Objectif : ' + GOAL.targetWeight.toLocaleString("fr-FR") + ' kg pour le ' + formatLong(GOAL.targetDate) + ' · enregistre un poids pour suivre ta trajectoire</p>';
+    }
+
+    var editHtml = goalEditOpen ?
+      '<div class="goal-edit-form" id="goalEditForm">' +
+        '<label>Poids cible (kg)<input type="number" step="0.1" id="goalWeightInput" value="'+GOAL.targetWeight+'"></label>' +
+        '<label>Dans combien de mois ?<input type="number" step="1" id="goalMonthsInput" value="4"></label>' +
+        '<button id="goalSaveBtn">Enregistrer</button>' +
+      '</div>' :
+      '<button class="link-btn" id="goalEditToggle" style="padding-left:0">Modifier l\'objectif</button>';
+
+    var headHtmlBase = '<div class="chart-card-head"><span class="chart-card-title">'+def.icon+' '+def.label+'</span></div>';
+
+    if(points.length < 2){
+      container.innerHTML = headHtmlBase + emptyStateHtml("Pas encore assez de données sur cette période.") + goalLineHtml + editHtml;
+      bindGoalEditHandlers();
+      return;
+    }
+
+    var last = points[points.length-1].value;
+    var first = points[0].value;
+    var delta = last - first;
+    var deltaStr = (delta > 0 ? "+" : "") + delta.toFixed(def.decimals);
+    var lastStr = last.toLocaleString("fr-FR", { maximumFractionDigits: def.decimals });
+
+    var headHtml2 = '<div class="chart-card-head">' +
+      '<span class="chart-card-title">'+def.icon+' '+def.label+'</span>' +
+      '<span style="text-align:right">' +
+        '<span class="chart-card-value">'+lastStr+' <small style="font-size:12px;font-weight:600;color:var(--ink-soft)">'+def.unit+'</small></span>' +
+        '<span class="chart-card-delta">'+deltaStr+' '+def.unit+' sur la période</span>' +
+      '</span>' +
+      '</div>';
+
+    var extraLines = [];
+    if(GOAL.startWeight != null){
+      var domain = chartDomain(chartRange);
+      var xMinMs = domain.start ? keyToDate(domain.start).getTime() : points[0].date.getTime();
+      var xMaxMs = keyToDate(domain.end).getTime();
+      extraLines.push({
+        from: { date: new Date(xMinMs), value: goalValueAt(xMinMs) },
+        to: { date: new Date(xMaxMs), value: goalValueAt(xMaxMs) },
+        color: "#9B6FD1"
+      });
+    }
+
+    container.innerHTML = headHtml2 + buildChartSVG(points, def.hex, extraLines) + goalLineHtml + editHtml;
+    bindGoalEditHandlers();
+  }
+
+  function bindGoalEditHandlers(){
+    var toggle = document.getElementById("goalEditToggle");
+    if(toggle){
+      toggle.addEventListener("click", function(){
+        goalEditOpen = true;
+        renderWeightChart();
+      });
+    }
+    var saveBtn = document.getElementById("goalSaveBtn");
+    if(saveBtn){
+      saveBtn.addEventListener("click", function(){
+        var w = parseFloat(document.getElementById("goalWeightInput").value.replace(",", "."));
+        var months = parseInt(document.getElementById("goalMonthsInput").value, 10);
+        if(isNaN(w) || isNaN(months) || months < 1){
+          showToast("Vérifie les valeurs saisies");
+          return;
+        }
+        var today = todayStr();
+        saveGoal({
+          targetWeight: w,
+          targetDate: addMonths(today, months),
+          startWeight: findLastKnownWeight(today),
+          startDate: today
+        });
+        goalEditOpen = false;
+        showToast("Objectif mis à jour");
+        renderWeightChart();
+      });
+    }
+  }
+
+  function renderCharts(){
+    renderWeightChart();
+    renderChartCard("chartSteps", "steps");
+    renderChartCard("chartCalIn", "caloriesIn");
+    renderChartCard("chartDeficit", "deficit");
+  }
+
+  // ---------- corrélations ----------
   function getPairs(metricA, metricB){
     var keys = Object.keys(DB.entries).filter(function(k){
       var e = DB.entries[k];
-      return e[metricA] != null && e[metricB] != null;
+      return getMetricValue(e, metricA) != null && getMetricValue(e, metricB) != null;
     }).sort();
     return {
-      xs: keys.map(function(k){ return DB.entries[k][metricA]; }),
-      ys: keys.map(function(k){ return DB.entries[k][metricB]; })
+      xs: keys.map(function(k){ return getMetricValue(DB.entries[k], metricA); }),
+      ys: keys.map(function(k){ return getMetricValue(DB.entries[k], metricB); })
     };
   }
 
@@ -865,12 +1095,13 @@
 
   function renderCorrelations(){
     renderCorrCard("corrWeightSteps", "weight", "steps");
-    renderCorrCard("corrWeightCal", "weight", "calories");
+    renderCorrCard("corrWeightDeficit", "weight", "deficit");
   }
 
   // ---------- init ----------
   function init(){
     loadDB();
+    ensureGoal();
     var name = getStoredName();
     if(name){
       userName = name;
@@ -879,7 +1110,6 @@
     }else{
       onboardingEl.classList.remove("hidden");
       setTimeout(function(){ onboardingInput.focus(); }, 200);
-      // l'écran "aujourd'hui" se construit derrière l'écran de bienvenue
       renderToday({ autofocus:false });
     }
   }
