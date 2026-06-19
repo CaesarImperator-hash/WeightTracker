@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#C9B6E4">
+<title>Mon suivi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F3FB;
+    --ink:#2B2438;
+    --ink-soft:#766C87;
+    --card:#FFFFFF;
+    --weight:#E8628C;
+    --steps:#239E90;
+    --cal:#F2994A;
+    --dawn-1:#C9B6E4;
+    --dawn-2:#FFD3B0;
+    --dawn-3:#AEDFF7;
+    --radius:22px;
+    --shadow:0 12px 30px -10px rgba(43,36,56,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Outfit',-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;
+  }
+  .app{
+    max-width:430px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+    position:relative;
+  }
+  .view{ flex:1; padding:14px 20px 110px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .view.hidden{ display:none; }
+
+  /* ---------- Onboarding ---------- */
+  .onboarding-overlay{
+    position:fixed; inset:0; z-index:200;
+    background:linear-gradient(160deg, var(--dawn-1), var(--dawn-2) 55%, var(--dawn-3));
+    display:flex; align-items:center; justify-content:center;
+    padding:32px;
+  }
+  .onboarding-overlay.hidden{ display:none; }
+  .onboarding-card{
+    background:rgba(255,255,255,.88); backdrop-filter:blur(10px);
+    border-radius:26px; padding:34px 26px; box-shadow:var(--shadow);
+    max-width:320px; width:100%; text-align:center;
+  }
+  .onboarding-emoji{ font-size:42px; margin-bottom:8px; }
+  .onboarding-title{ font-family:'Fraunces',serif; font-weight:600; font-size:22px; margin:0 0 6px; }
+  .onboarding-sub{ font-size:13.5px; color:var(--ink-soft); margin:0 0 22px; }
+  .onboarding-input{ width:100%; text-align:center; border:none; border-bottom:2px solid #EEE7F5; background:transparent; font-family:'Outfit'; font-weight:700; font-size:22px; padding:8px 4px; outline:none; margin-bottom:22px; color:var(--ink); }
+  .onboarding-input::placeholder{ color:#D5CCE3; font-weight:600; }
+
+  /* ---------- Sun hero ---------- */
+  .sun-hero{ position:relative; border-radius:28px; overflow:hidden; height:160px; margin:0 0 18px; box-shadow:var(--shadow); }
+  .sun-hero svg{ width:100%; height:100%; display:block; }
+  #skyDayRect{ transition:opacity .7s ease; }
+  #sunCircle{ transition:cy .7s cubic-bezier(.22,.9,.3,1), fill .6s ease; }
+  #rays{ transition:opacity .5s ease; }
+  .hero-status{ position:absolute; left:18px; bottom:14px; display:flex; gap:10px; }
+  .hero-chip{ display:flex; align-items:center; gap:5px; background:rgba(255,255,255,.55); backdrop-filter:blur(6px); border-radius:14px; padding:5px 9px; font-size:13px; font-weight:600; color:var(--ink); opacity:.55; transition:opacity .4s ease, background .4s ease; }
+  .hero-chip.done{ opacity:1; background:rgba(255,255,255,.85); }
+  .hero-title{ position:absolute; top:14px; left:18px; right:18px; font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:#3a2f55; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* ---------- Date nav ---------- */
+  .date-nav{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:16px; }
+  .date-nav button{ background:var(--card); border:none; width:34px; height:34px; border-radius:50%; font-size:17px; color:var(--ink); box-shadow:var(--shadow); cursor:pointer; }
+  .date-nav button:disabled{ opacity:.25; }
+  .date-label{ font-family:'Fraunces',serif; font-weight:600; font-size:16px; text-transform:capitalize; min-width:175px; text-align:center; }
+
+  /* ---------- Step wizard ---------- */
+  .step-dots{ display:flex; justify-content:center; gap:8px; margin-bottom:16px; }
+  .step-dot{ width:8px; height:8px; border-radius:50%; background:#E3D9F0; transition:width .3s ease, background .3s ease; }
+  .step-dot.active{ width:24px; border-radius:5px; background:var(--ink); }
+  .step-dot.filled:not(.active){ background:#C9B6E4; }
+
+  .entry-card{ background:var(--card); border-radius:var(--radius); padding:26px 0 22px; box-shadow:var(--shadow); }
+  .step-viewport{ overflow:hidden; }
+  .step-track{ display:flex; width:400%; transition:transform .45s cubic-bezier(.65,0,.35,1); }
+  .step-panel{ width:25%; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:14px; padding:0 26px; text-align:center; }
+  .step-icon{ font-size:42px; line-height:1; }
+  .step-name{ font-family:'Fraunces',serif; font-weight:600; font-size:18px; color:var(--ink); margin:0; }
+  .step-input-wrap{ display:flex; align-items:baseline; justify-content:center; gap:8px; border-bottom:2px solid #EEE7F5; padding-bottom:10px; width:100%; max-width:220px; }
+  .step-panel[data-step="0"] .step-input-wrap{ border-color:#F4D6E0; }
+  .step-panel[data-step="1"] .step-input-wrap{ border-color:#D3ECE8; }
+  .step-panel[data-step="2"] .step-input-wrap{ border-color:#FBE3CC; }
+  .step-input-wrap input{ width:100%; text-align:center; border:none; background:transparent; font-family:'Outfit'; font-weight:700; font-size:32px; color:var(--ink); -webkit-appearance:none; outline:none; min-width:0; padding:0; }
+  .step-input-wrap input::placeholder{ color:#D5CCE3; font-weight:600; }
+  .step-input-wrap input::-webkit-outer-spin-button,
+  .step-input-wrap input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .unit{ font-size:13px; color:var(--ink-soft); font-weight:500; white-space:nowrap; }
+  .step-btn{ width:100%; max-width:220px; }
+
+  .success-panel .check-circle{ width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,var(--dawn-1),var(--dawn-2)); display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:2px; }
+  .success-recap{ font-size:14px; color:var(--ink-soft); line-height:1.7; min-height:24px; }
+
+  .btn-primary{ background:linear-gradient(135deg,var(--dawn-1),var(--dawn-2)); color:#3a2f55; border:none; border-radius:16px; padding:14px; font-family:'Outfit'; font-weight:700; font-size:15.5px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s ease; }
+  .btn-primary:active{ transform:scale(.97); }
+  .link-btn{ background:none; border:none; color:var(--ink-soft); font-weight:600; font-size:13px; text-decoration:underline; cursor:pointer; font-family:'Outfit'; padding:6px; }
+
+  /* ---------- Tab bar ---------- */
+  .tab-bar{ position:sticky; bottom:0; left:0; right:0; display:flex; background:rgba(255,255,255,.9); backdrop-filter:blur(14px); border-top:1px solid #ECE4F6; padding:9px 8px calc(9px + env(safe-area-inset-bottom)); }
+  .tab-btn{ flex:1; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:19px; color:var(--ink-soft); padding:4px 0; cursor:pointer; }
+  .tab-btn span{ font-size:11px; font-weight:600; font-family:'Outfit'; }
+  .tab-btn.active{ color:var(--ink); }
+
+  /* ---------- Section headers / pills ---------- */
+  .section-title{ font-family:'Fraunces',serif; font-weight:600; font-size:23px; margin:4px 0 4px; }
+  .section-sub{ font-size:13px; color:var(--ink-soft); margin:0 0 16px; }
+  .range-pills{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .pill{ border:none; background:var(--card); padding:8px 14px; border-radius:20px; font-weight:600; font-size:13px; color:var(--ink-soft); cursor:pointer; box-shadow:0 4px 10px -4px rgba(43,36,56,.15); font-family:'Outfit'; }
+  .pill.active{ background:var(--ink); color:#fff; }
+
+  /* ---------- Chart cards ---------- */
+  .chart-card{ background:var(--card); border-radius:var(--radius); padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .chart-card-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px; }
+  .chart-card-title{ font-weight:700; font-size:14px; display:flex; gap:7px; align-items:center; color:var(--ink-soft); }
+  .chart-card-value{ font-family:'Outfit'; font-weight:800; font-size:21px; text-align:right; }
+  .chart-card-delta{ font-size:11.5px; font-weight:600; color:var(--ink-soft); text-align:right; display:block; }
+  .chart-card svg{ width:100%; height:auto; display:block; margin-top:6px; }
+  .axis-label{ font-size:10px; fill:var(--ink-soft); font-family:'Outfit'; }
+
+  .empty-state{ text-align:center; padding:34px 14px; color:var(--ink-soft); font-size:13.5px; line-height:1.5; }
+  .empty-state .emoji{ font-size:32px; display:block; margin-bottom:8px; }
+
+  /* ---------- Correlation cards ---------- */
+  .corr-card{ background:var(--card); border-radius:var(--radius); padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .corr-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; }
+  .corr-pair{ font-weight:700; font-size:14px; }
+  .corr-r{ font-family:'Outfit'; font-weight:800; font-size:21px; flex-shrink:0; }
+  .corr-body{ display:flex; gap:14px; align-items:center; }
+  .corr-body svg{ flex-shrink:0; width:96px; height:96px; }
+  .corr-bar{ height:7px; border-radius:6px; background:#EEE7F5; position:relative; margin:8px 0 10px; }
+  .corr-bar-fill{ position:absolute; top:0; bottom:0; border-radius:6px; }
+  .corr-bar-mid{ position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:#D5CCE3; }
+  .corr-text{ font-size:13px; color:var(--ink-soft); line-height:1.5; flex:1; }
+  .disclaimer{ font-size:11.5px; color:var(--ink-soft); text-align:center; margin:6px 0 10px; line-height:1.5; padding:0 6px; }
+
+  .toast{ position:fixed; bottom:88px; left:50%; transform:translateX(-50%) translateY(16px); background:var(--ink); color:#fff; padding:10px 20px; border-radius:30px; font-weight:600; font-size:14px; opacity:0; transition:opacity .3s, transform .3s; pointer-events:none; z-index:50; font-family:'Outfit'; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  :focus-visible{ outline:3px solid var(--dawn-3); outline-offset:2px; border-radius:4px; }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="onboarding-overlay hidden" id="onboarding">
+  <div class="onboarding-card">
+    <div class="onboarding-emoji">🌅</div>
+    <p class="onboarding-title">Bienvenue !</p>
+    <p class="onboarding-sub">Comment tu t'appelles ?</p>
+    <input id="onboardingInput" class="onboarding-input" type="text" placeholder="Ton prénom" enterkeyhint="done" autocomplete="given-name" maxlength="20">
+    <button class="btn-primary" id="onboardingSubmit" style="width:100%">Commencer</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ===== TODAY VIEW ===== -->
+  <main id="view-today" class="view">
+
+    <section class="sun-hero" id="sunHero" aria-hidden="true">
+      <svg viewBox="0 0 320 168" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="skyNight" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#332B52"/>
+            <stop offset="100%" stop-color="#9C86C4"/>
+          </linearGradient>
+          <linearGradient id="skyDay" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FFD3B0"/>
+            <stop offset="55%" stop-color="#F6C9C9"/>
+            <stop offset="100%" stop-color="#AEDFF7"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="168" fill="url(#skyNight)"/>
+        <rect id="skyDayRect" width="320" height="168" fill="url(#skyDay)" style="opacity:0"/>
+        <path d="M0,128 Q160,108 320,128 L320,168 L0,168 Z" fill="rgba(43,36,56,0.10)"/>
+        <g id="rays" style="opacity:0" stroke="#FFE8B0" stroke-width="2.5" stroke-linecap="round">
+          <line x1="160" y1="20" x2="160" y2="6"/>
+          <line x1="186" y1="27" x2="196" y2="16"/>
+          <line x1="134" y1="27" x2="124" y2="16"/>
+          <line x1="206" y1="44" x2="218" y2="36"/>
+          <line x1="114" y1="44" x2="102" y2="36"/>
+        </g>
+        <circle id="sunCircle" cx="160" cy="152" r="24" fill="#8C7AB8"/>
+      </svg>
+      <div class="hero-title" id="heroTitle">Bonjour 🌷</div>
+      <div class="hero-status">
+        <div class="hero-chip" id="chipWeight">⚖️</div>
+        <div class="hero-chip" id="chipSteps">👟</div>
+        <div class="hero-chip" id="chipCal">🔥</div>
+      </div>
+    </section>
+
+    <section class="date-nav">
+      <button id="prevDay" aria-label="Jour précédent">‹</button>
+      <div class="date-label" id="dateLabel">—</div>
+      <button id="nextDay" aria-label="Jour suivant">›</button>
+    </section>
+
+    <div class="step-dots" id="stepDots" aria-hidden="true">
+      <span class="step-dot" data-dot="0"></span>
+      <span class="step-dot" data-dot="1"></span>
+      <span class="step-dot" data-dot="2"></span>
+    </div>
+
+    <section class="entry-card">
+      <div class="step-viewport">
+        <div class="step-track" id="stepTrack">
+
+          <div class="step-panel" data-step="0">
+            <span class="step-icon">⚖️</span>
+            <p class="step-name">Ton poids</p>
+            <div class="step-input-wrap">
+              <input id="stepInputWeight" type="number" inputmode="decimal" step="0.1" placeholder="ex : 62.5" enterkeyhint="next">
+              <span class="unit">kg</span>
+            </div>
+            <button class="btn-primary step-btn" id="btnStepWeight">Valider</button>
+          </div>
+
+          <div class="step-panel" data-step="1">
+            <span class="step-icon">👟</span>
+            <p class="step-name">Tes pas</p>
+            <div class="step-input-wrap">
+              <input id="stepInputSteps" type="number" inputmode="numeric" step="1" placeholder="ex : 8000" enterkeyhint="next">
+              <span class="unit">pas</span>
+            </div>
+            <button class="btn-primary step-btn" id="btnStepSteps">Valider</button>
+          </div>
+
+          <div class="step-panel" data-step="2">
+            <span class="step-icon">🔥</span>
+            <p class="step-name">Tes calories</p>
+            <div class="step-input-wrap">
+              <input id="stepInputCalories" type="number" inputmode="numeric" step="1" placeholder="ex : 1800" enterkeyhint="done">
+              <span class="unit">kcal</span>
+            </div>
+            <button class="btn-primary step-btn" id="btnStepCalories">Terminer</button>
+          </div>
+
+          <div class="step-panel success-panel" data-step="3">
+            <div class="check-circle">✓</div>
+            <p class="step-name">C'est noté</p>
+            <p class="success-recap" id="successRecap"></p>
+            <button class="link-btn" id="btnEditAgain">Modifier</button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== CHARTS VIEW ===== -->
+  <main id="view-charts" class="view hidden">
+    <h1 class="section-title">Courbes</h1>
+    <p class="section-sub">La ligne pointillée montre la tendance lissée sur 7 jours.</p>
+    <div class="range-pills" id="rangePills">
+      <button class="pill active" data-range="7">7 j</button>
+      <button class="pill" data-range="30">30 j</button>
+      <button class="pill" data-range="90">90 j</button>
+      <button class="pill" data-range="all">Tout</button>
+    </div>
+    <div id="chartWeight" class="chart-card"></div>
+    <div id="chartSteps" class="chart-card"></div>
+    <div id="chartCalories" class="chart-card"></div>
+  </main>
+
+  <!-- ===== CORRELATIONS VIEW ===== -->
+  <main id="view-corr" class="view hidden">
+    <h1 class="section-title">Liens entre tes données</h1>
+    <p class="section-sub">Calculé sur tous les jours où les deux données existent.</p>
+    <div id="corrWeightSteps" class="corr-card"></div>
+    <div id="corrWeightCal" class="corr-card"></div>
+    <p class="disclaimer">Une corrélation indique que deux choses évoluent ensemble — pas que l'une cause l'autre. 🙂</p>
+  </main>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="today" aria-label="Aujourd'hui">🏠<span>Aujourd'hui</span></button>
+    <button class="tab-btn" data-tab="charts" aria-label="Courbes">📈<span>Courbes</span></button>
+    <button class="tab-btn" data-tab="corr" aria-label="Liens">🔗<span>Liens</span></button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DATA_KEY = "tracker-data-v1";
+  var NAME_KEY = "tracker-user-name";
+  var DB = { entries: {} };
+  var userName = "";
+  var currentDate = todayStr();
+  var activeTab = "today";
+  var chartRange = 7; // number of days, or Infinity
+  var stepIndex = 0;
+
+  // ---------- date helpers ----------
+  function pad(n){ return n.toString().padStart(2,"0"); }
+  function toKey(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function todayStr(){ return toKey(new Date()); }
+  function keyToDate(k){
+    var parts = k.split("-").map(Number);
+    return new Date(parts[0], parts[1]-1, parts[2]);
+  }
+  function addDays(dateStr, delta){
+    var d = keyToDate(dateStr);
+    d.setDate(d.getDate()+delta);
+    return toKey(d);
+  }
+  function isToday(dateStr){ return dateStr === todayStr(); }
+  function formatDateLabel(dateStr){
+    var today = todayStr();
+    var yest = addDays(today, -1);
+    if(dateStr === today) return "Aujourd'hui";
+    if(dateStr === yest) return "Hier";
+    var d = keyToDate(dateStr);
+    return d.toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" });
+  }
+  function formatShort(dateStr){
+    var d = keyToDate(dateStr);
+    return d.toLocaleDateString("fr-FR", { day:"numeric", month:"short" });
+  }
+
+  // ---------- storage (navigateur, fonctionne une fois le site déployé) ----------
+  function loadDB(){
+    try{
+      var raw = localStorage.getItem(DATA_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && parsed.entries) DB = parsed;
+      }
+    }catch(e){ DB = { entries:{} }; }
+  }
+  function persistDB(){
+    try{
+      localStorage.setItem(DATA_KEY, JSON.stringify(DB));
+    }catch(e){
+      console.error("storage error", e);
+      showToast("Sauvegarde impossible sur cet appareil");
+    }
+  }
+  function getStoredName(){
+    try{ return localStorage.getItem(NAME_KEY); }catch(e){ return null; }
+  }
+  function setStoredName(name){
+    try{ localStorage.setItem(NAME_KEY, name); }catch(e){}
+  }
+
+  // ---------- haptique ----------
+  function vibrate(pattern){
+    try{
+      if(navigator.vibrate) navigator.vibrate(pattern);
+    }catch(e){}
+  }
+
+  // ---------- toast ----------
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 1800);
+  }
+
+  // ---------- onboarding (prénom à la première connexion) ----------
+  var onboardingEl = document.getElementById("onboarding");
+  var onboardingInput = document.getElementById("onboardingInput");
+  var onboardingSubmit = document.getElementById("onboardingSubmit");
+  var heroTitle = document.getElementById("heroTitle");
+
+  function capitalize(s){
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  function updateGreeting(){
+    heroTitle.textContent = userName ? ("Bonjour " + userName + " 🌷") : "Bonjour 🌷";
+  }
+  function submitOnboarding(){
+    var name = onboardingInput.value.trim();
+    if(!name){
+      showToast("Dis-moi comment tu t'appelles 🙂");
+      return;
+    }
+    userName = capitalize(name);
+    setStoredName(userName);
+    vibrate(20);
+    onboardingEl.classList.add("hidden");
+    updateGreeting();
+    renderToday({ autofocus:true });
+  }
+  onboardingSubmit.addEventListener("click", submitOnboarding);
+  onboardingInput.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); submitOnboarding(); }
+  });
+
+  // ---------- sun hero ----------
+  var skyDayRect = document.getElementById("skyDayRect");
+  var sunCircle = document.getElementById("sunCircle");
+  var rays = document.getElementById("rays");
+  var chipWeight = document.getElementById("chipWeight");
+  var chipSteps = document.getElementById("chipSteps");
+  var chipCal = document.getElementById("chipCal");
+
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function hexToRgb(hex){
+    var v = parseInt(hex.slice(1),16);
+    return [(v>>16)&255, (v>>8)&255, v&255];
+  }
+  function lerpColor(hexA, hexB, t){
+    var a = hexToRgb(hexA), b = hexToRgb(hexB);
+    var r = Math.round(lerp(a[0],b[0],t));
+    var g = Math.round(lerp(a[1],b[1],t));
+    var bl = Math.round(lerp(a[2],b[2],t));
+    return "rgb(" + r + "," + g + "," + bl + ")";
+  }
+
+  function currentFillCount(){
+    var entry = DB.entries[currentDate] || {};
+    var filled = [entry.weight!=null, entry.steps!=null, entry.calories!=null];
+    return { filled: filled, count: filled.filter(Boolean).length };
+  }
+
+  function updateSunHero(){
+    var f = currentFillCount();
+    var progress = f.count/3;
+
+    skyDayRect.style.opacity = progress;
+    sunCircle.setAttribute("cy", (152 - progress*120).toString());
+    sunCircle.setAttribute("fill", lerpColor("#8C7AB8", "#F4A261", progress));
+    rays.style.opacity = progress >= 0.999 ? "1" : "0";
+
+    chipWeight.classList.toggle("done", f.filled[0]);
+    chipSteps.classList.toggle("done", f.filled[1]);
+    chipCal.classList.toggle("done", f.filled[2]);
+  }
+
+  // ---------- step wizard ----------
+  var stepTrack = document.getElementById("stepTrack");
+  var stepDots = document.querySelectorAll(".step-dot");
+  var inputWeight = document.getElementById("stepInputWeight");
+  var inputSteps = document.getElementById("stepInputSteps");
+  var inputCalories = document.getElementById("stepInputCalories");
+  var btnStepWeight = document.getElementById("btnStepWeight");
+  var btnStepSteps = document.getElementById("btnStepSteps");
+  var btnStepCalories = document.getElementById("btnStepCalories");
+  var btnEditAgain = document.getElementById("btnEditAgain");
+  var successRecap = document.getElementById("successRecap");
+
+  function updateDots(i){
+    stepDots.forEach(function(dot, idx){
+      dot.classList.toggle("active", idx === i);
+      dot.classList.toggle("filled", i === 3 ? true : idx < i);
+    });
+  }
+
+  function goToStep(i, opts){
+    opts = opts || {};
+    var animate = opts.animate !== false;
+    var autofocus = opts.autofocus !== false;
+    stepIndex = i;
+
+    if(!animate) stepTrack.style.transition = "none";
+    stepTrack.style.transform = "translateX(-" + (i*25) + "%)";
+    if(!animate){
+      void stepTrack.offsetHeight; // force reflow
+      stepTrack.style.transition = "";
+    }
+    updateDots(i);
+
+    if(autofocus && i < 3){
+      var ids = [inputWeight, inputSteps, inputCalories];
+      var delay = animate ? 400 : 0;
+      setTimeout(function(){ ids[i].focus(); }, delay);
+    }
+  }
+
+  function firstUnfilledStep(entry){
+    if(entry.weight == null) return 0;
+    if(entry.steps == null) return 1;
+    if(entry.calories == null) return 2;
+    return 3;
+  }
+
+  function commitField(field, inputEl){
+    var raw = inputEl.value.trim();
+    if(raw === "") return; // rien saisi : on n'écrase rien, on avance simplement
+    var entry = DB.entries[currentDate] || {};
+    if(field === "weight"){
+      var w = parseFloat(raw.replace(",", "."));
+      if(!isNaN(w)) entry.weight = w;
+    }else{
+      var v = parseInt(raw, 10);
+      if(!isNaN(v)) entry[field] = v;
+    }
+    DB.entries[currentDate] = entry;
+    persistDB();
+    updateSunHero();
+  }
+
+  function renderSuccessRecap(){
+    var entry = DB.entries[currentDate] || {};
+    var parts = [];
+    if(entry.weight != null) parts.push("⚖️ " + entry.weight.toLocaleString("fr-FR") + " kg");
+    if(entry.steps != null) parts.push("👟 " + entry.steps.toLocaleString("fr-FR") + " pas");
+    if(entry.calories != null) parts.push("🔥 " + entry.calories.toLocaleString("fr-FR") + " kcal");
+    successRecap.textContent = parts.length ? parts.join(" · ") : "Rien d'enregistré ce jour-là.";
+  }
+
+  btnStepWeight.addEventListener("click", function(){
+    commitField("weight", inputWeight);
+    vibrate(20);
+    goToStep(1);
+  });
+  btnStepSteps.addEventListener("click", function(){
+    commitField("steps", inputSteps);
+    vibrate(20);
+    goToStep(2);
+  });
+  btnStepCalories.addEventListener("click", function(){
+    commitField("calories", inputCalories);
+    vibrate([20, 40, 20]);
+    goToStep(3);
+    renderSuccessRecap();
+    showToast("Enregistré ✓");
+    if(activeTab === "charts") renderCharts();
+    if(activeTab === "corr") renderCorrelations();
+  });
+  btnEditAgain.addEventListener("click", function(){
+    goToStep(0);
+  });
+
+  var stepInputsInOrder = [inputWeight, inputSteps, inputCalories];
+  var stepButtonsInOrder = [btnStepWeight, btnStepSteps, btnStepCalories];
+  stepInputsInOrder.forEach(function(inp, idx){
+    inp.addEventListener("focus", function(){ inp.select(); });
+    inp.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === "Go" || e.key === "Done"){
+        e.preventDefault();
+        stepButtonsInOrder[idx].click();
+      }
+    });
+  });
+
+  // ---------- date navigation ----------
+  var dateLabel = document.getElementById("dateLabel");
+  var prevDayBtn = document.getElementById("prevDay");
+  var nextDayBtn = document.getElementById("nextDay");
+
+  function findLastKnownWeight(uptoDateStr){
+    var dates = Object.keys(DB.entries)
+      .filter(function(k){ return k <= uptoDateStr && DB.entries[k].weight != null; })
+      .sort();
+    if(dates.length === 0) return null;
+    return DB.entries[dates[dates.length-1]].weight;
+  }
+
+  function renderToday(opts){
+    opts = opts || {};
+    dateLabel.textContent = formatDateLabel(currentDate);
+    nextDayBtn.disabled = isToday(currentDate);
+
+    var entry = DB.entries[currentDate] || {};
+
+    var weightValue;
+    if(isToday(currentDate)){
+      var fallbackWeight = findLastKnownWeight(currentDate);
+      weightValue = fallbackWeight != null ? fallbackWeight : "";
+    }else{
+      weightValue = entry.weight != null ? entry.weight : "";
+    }
+    inputWeight.value = weightValue;
+    inputSteps.value = entry.steps != null ? entry.steps : "";
+    inputCalories.value = entry.calories != null ? entry.calories : "";
+
+    updateSunHero();
+
+    var start = firstUnfilledStep(entry);
+    goToStep(start, { animate:false, autofocus: !!opts.autofocus });
+    if(start === 3) renderSuccessRecap();
+  }
+
+  prevDayBtn.addEventListener("click", function(){
+    currentDate = addDays(currentDate, -1);
+    renderToday({ autofocus:false });
+  });
+  nextDayBtn.addEventListener("click", function(){
+    if(!isToday(currentDate)){
+      currentDate = addDays(currentDate, 1);
+      renderToday({ autofocus:false });
+    }
+  });
+
+  // ---------- tabs ----------
+  var tabButtons = document.querySelectorAll(".tab-btn");
+  var views = {
+    today: document.getElementById("view-today"),
+    charts: document.getElementById("view-charts"),
+    corr: document.getElementById("view-corr")
+  };
+  tabButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      activeTab = btn.dataset.tab;
+      tabButtons.forEach(function(b){ b.classList.toggle("active", b === btn); });
+      Object.keys(views).forEach(function(k){ views[k].classList.toggle("hidden", k !== activeTab); });
+      if(activeTab === "charts") renderCharts();
+      if(activeTab === "corr") renderCorrelations();
+    });
+  });
+
+  // ---------- chart range pills ----------
+  var rangePills = document.querySelectorAll("#rangePills .pill");
+  rangePills.forEach(function(p){
+    p.addEventListener("click", function(){
+      chartRange = p.dataset.range === "all" ? Infinity : parseInt(p.dataset.range, 10);
+      rangePills.forEach(function(x){ x.classList.toggle("active", x === p); });
+      renderCharts();
+    });
+  });
+
+  // ---------- math helpers ----------
+  function movingAverage(values, windowSize){
+    var out = [];
+    for(var i=0; i<values.length; i++){
+      var start = Math.max(0, i - windowSize + 1);
+      var slice = values.slice(start, i+1);
+      var sum = slice.reduce(function(a,b){ return a+b; }, 0);
+      out.push(sum/slice.length);
+    }
+    return out;
+  }
+  function pearson(xs, ys){
+    var n = xs.length;
+    if(n < 2) return null;
+    var mx = xs.reduce(function(a,b){return a+b;},0)/n;
+    var my = ys.reduce(function(a,b){return a+b;},0)/n;
+    var num=0, dx2=0, dy2=0;
+    for(var i=0;i<n;i++){
+      var dx = xs[i]-mx, dy = ys[i]-my;
+      num += dx*dy; dx2 += dx*dx; dy2 += dy*dy;
+    }
+    var denom = Math.sqrt(dx2*dy2);
+    if(denom === 0) return 0;
+    return num/denom;
+  }
+  function linreg(xs, ys){
+    var n = xs.length;
+    var mx = xs.reduce(function(a,b){return a+b;},0)/n;
+    var my = ys.reduce(function(a,b){return a+b;},0)/n;
+    var num=0, den=0;
+    for(var i=0;i<n;i++){ var dx=xs[i]-mx; num += dx*(ys[i]-my); den += dx*dx; }
+    var slope = den===0 ? 0 : num/den;
+    var intercept = my - slope*mx;
+    return { slope: slope, intercept: intercept };
+  }
+  function smoothPath(points){
+    if(points.length === 0) return "";
+    if(points.length === 1) return "M" + points[0].x + "," + points[0].y;
+    var d = "M" + points[0].x + "," + points[0].y;
+    for(var i=0; i<points.length-1; i++){
+      var curr = points[i], next = points[i+1];
+      var midX = (curr.x+next.x)/2, midY = (curr.y+next.y)/2;
+      d += " Q" + curr.x + "," + curr.y + " " + midX + "," + midY;
+    }
+    var last = points[points.length-1];
+    d += " L" + last.x + "," + last.y;
+    return d;
+  }
+
+  // ---------- charts ----------
+  var CHART_W = 320, CHART_H = 130, PAD = { l:8, r:8, t:10, b:18 };
+
+  function getSeries(metric, rangeDays){
+    var keys = Object.keys(DB.entries).filter(function(k){
+      return DB.entries[k][metric] != null;
+    }).sort();
+    if(rangeDays !== Infinity){
+      var cutoff = addDays(todayStr(), -(rangeDays-1));
+      keys = keys.filter(function(k){ return k >= cutoff; });
+    }
+    return keys.map(function(k){ return { key:k, date: keyToDate(k), value: DB.entries[k][metric] }; });
+  }
+
+  function buildChartSVG(points, color){
+    var xs = points.map(function(p){ return p.date.getTime(); });
+    var ys = points.map(function(p){ return p.value; });
+    var xMin = Math.min.apply(null, xs), xMax = Math.max.apply(null, xs);
+    var yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
+    var yPad = (yMax - yMin) * 0.2 || Math.max(1, yMax*0.1);
+    var yLo = yMin - yPad, yHi = yMax + yPad;
+    var w = CHART_W - PAD.l - PAD.r, h = CHART_H - PAD.t - PAD.b;
+
+    function xScale(t){ return xMax===xMin ? PAD.l + w/2 : PAD.l + (t-xMin)/(xMax-xMin)*w; }
+    function yScale(v){ return PAD.t + h - (v-yLo)/(yHi-yLo)*h; }
+
+    var pts = points.map(function(p){ return { x: xScale(p.date.getTime()), y: yScale(p.value) }; });
+    var linePath = smoothPath(pts);
+
+    var maValues = movingAverage(ys, Math.min(7, ys.length));
+    var maPts = maValues.map(function(v,i){ return { x: pts[i].x, y: yScale(v) }; });
+    var maPath = ys.length >= 3 ? smoothPath(maPts) : "";
+
+    var areaPath = "";
+    if(pts.length >= 2){
+      var first = pts[0], lastPt = pts[pts.length-1];
+      areaPath = linePath + " L" + lastPt.x + "," + (PAD.t+h) + " L" + first.x + "," + (PAD.t+h) + " Z";
+    }
+
+    var gradId = "grad-" + color.replace("#","");
+    var dotsHtml = pts.map(function(p){ return '<circle cx="'+p.x+'" cy="'+p.y+'" r="2.6" fill="'+color+'" />'; }).join("");
+    var startLabel = formatShort(points[0].key);
+    var endLabel = formatShort(points[points.length-1].key);
+
+    return '<svg viewBox="0 0 '+CHART_W+' '+CHART_H+'" preserveAspectRatio="none">' +
+      '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="'+color+'" stop-opacity="0.28"/>' +
+      '<stop offset="100%" stop-color="'+color+'" stop-opacity="0"/>' +
+      '</linearGradient></defs>' +
+      (areaPath ? '<path d="'+areaPath+'" fill="url(#'+gradId+')" stroke="none"/>' : "") +
+      (maPath ? '<path d="'+maPath+'" fill="none" stroke="'+color+'" stroke-width="1.6" stroke-dasharray="4,3" opacity="0.55"/>' : "") +
+      '<path d="'+linePath+'" fill="none" stroke="'+color+'" stroke-width="2.4" stroke-linecap="round"/>' +
+      dotsHtml +
+      '<text class="axis-label" x="'+PAD.l+'" y="'+CHART_H+'">'+startLabel+'</text>' +
+      '<text class="axis-label" x="'+(CHART_W-PAD.r)+'" y="'+CHART_H+'" text-anchor="end">'+endLabel+'</text>' +
+      '</svg>';
+  }
+
+  function emptyStateHtml(msg){
+    return '<div class="empty-state"><span class="emoji">🌱</span>' + msg + '</div>';
+  }
+
+  var METRIC_DEFS = {
+    weight: { label:"Poids", icon:"⚖️", unit:"kg", hex:"#E8628C", decimals:1 },
+    steps: { label:"Pas", icon:"👟", unit:"pas", hex:"#239E90", decimals:0 },
+    calories: { label:"Calories", icon:"🔥", unit:"kcal", hex:"#F2994A", decimals:0 }
+  };
+
+  function renderChartCard(containerId, metric){
+    var def = METRIC_DEFS[metric];
+    var container = document.getElementById(containerId);
+    var points = getSeries(metric, chartRange);
+
+    if(points.length < 2){
+      var headHtmlEmpty = '<div class="chart-card-head"><span class="chart-card-title">'+def.icon+' '+def.label+'</span></div>';
+      container.innerHTML = headHtmlEmpty + emptyStateHtml("Pas encore assez de données sur cette période.");
+      return;
+    }
+
+    var last = points[points.length-1].value;
+    var first = points[0].value;
+    var delta = last - first;
+    var deltaStr = (delta > 0 ? "+" : "") + delta.toFixed(def.decimals);
+    var lastStr = last.toLocaleString("fr-FR", { maximumFractionDigits: def.decimals });
+
+    var headHtml2 = '<div class="chart-card-head">' +
+      '<span class="chart-card-title">'+def.icon+' '+def.label+'</span>' +
+      '<span style="text-align:right">' +
+        '<span class="chart-card-value">'+lastStr+' <small style="font-size:12px;font-weight:600;color:var(--ink-soft)">'+def.unit+'</small></span>' +
+        '<span class="chart-card-delta">'+deltaStr+' '+def.unit+' sur la période</span>' +
+      '</span>' +
+      '</div>';
+
+    container.innerHTML = headHtml2 + buildChartSVG(points, def.hex);
+  }
+
+  function renderCharts(){
+    renderChartCard("chartWeight", "weight");
+    renderChartCard("chartSteps", "steps");
+    renderChartCard("chartCalories", "calories");
+  }
+
+  // ---------- correlations ----------
+  function getPairs(metricA, metricB){
+    var keys = Object.keys(DB.entries).filter(function(k){
+      var e = DB.entries[k];
+      return e[metricA] != null && e[metricB] != null;
+    }).sort();
+    return {
+      xs: keys.map(function(k){ return DB.entries[k][metricA]; }),
+      ys: keys.map(function(k){ return DB.entries[k][metricB]; })
+    };
+  }
+
+  function strengthLabel(absR){
+    if(absR < 0.1) return "quasi nulle";
+    if(absR < 0.3) return "faible";
+    if(absR < 0.5) return "modérée";
+    if(absR < 0.7) return "assez forte";
+    if(absR < 0.9) return "forte";
+    return "très forte";
+  }
+
+  function buildScatterSVG(xs, ys, color){
+    var S = 96, P = 10;
+    var xMin = Math.min.apply(null, xs), xMax = Math.max.apply(null, xs);
+    var yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
+    var xPad = (xMax-xMin)*0.12 || 1, yPad = (yMax-yMin)*0.12 || 1;
+    var xLo = xMin-xPad, xHi = xMax+xPad, yLo = yMin-yPad, yHi = yMax+yPad;
+    function xScale(v){ return P + (v-xLo)/(xHi-xLo)*(S-2*P); }
+    function yScale(v){ return S-P - (v-yLo)/(yHi-yLo)*(S-2*P); }
+
+    var reg = linreg(xs, ys);
+    var rx1 = xLo, rx2 = xHi;
+    var ry1 = reg.slope*rx1 + reg.intercept;
+    var ry2 = reg.slope*rx2 + reg.intercept;
+
+    var dots = xs.map(function(x,i){
+      return '<circle cx="'+xScale(x)+'" cy="'+yScale(ys[i])+'" r="2.8" fill="'+color+'" opacity="0.75"/>';
+    }).join("");
+
+    return '<svg viewBox="0 0 '+S+' '+S+'">' +
+      '<rect x="0" y="0" width="'+S+'" height="'+S+'" rx="10" fill="#FAF8FD"/>' +
+      '<line x1="'+xScale(rx1)+'" y1="'+yScale(ry1)+'" x2="'+xScale(rx2)+'" y2="'+yScale(ry2)+'" stroke="'+color+'" stroke-width="1.6" opacity="0.5" stroke-dasharray="3,2"/>' +
+      dots +
+      '</svg>';
+  }
+
+  function renderCorrCard(containerId, metricA, metricB){
+    var defA = METRIC_DEFS[metricA], defB = METRIC_DEFS[metricB];
+    var container = document.getElementById(containerId);
+    var data = getPairs(metricA, metricB);
+    var n = data.xs.length;
+
+    var headHtml = '<div class="corr-head"><span class="corr-pair">'+defA.icon+' '+defA.label+' — '+defB.icon+' '+defB.label+'</span></div>';
+
+    if(n < 5){
+      container.innerHTML = headHtml + emptyStateHtml("Encore "+(5-n)+" jour(s) avec ces deux données à enregistrer pour voir le lien.");
+      return;
+    }
+
+    var r = pearson(data.xs, data.ys);
+    var pct = ((r+1)/2*100);
+    var barColor = r >= 0 ? defA.hex : defB.hex;
+    var sentence = "Lien "+strengthLabel(Math.abs(r))+" (r = "+r.toFixed(2)+") : "+defA.label.toLowerCase()+" et "+defB.label.toLowerCase()+(r>=0 ? " évoluent plutôt dans le même sens." : " évoluent plutôt en sens inverse.");
+
+    container.innerHTML = headHtml +
+      '<div class="corr-body">' +
+        buildScatterSVG(data.xs, data.ys, defA.hex) +
+        '<div style="flex:1">' +
+          '<span class="corr-r" style="color:'+barColor+'">'+(r>=0?"+":"")+r.toFixed(2)+'</span>' +
+          '<div class="corr-bar"><span class="corr-bar-mid"></span><span class="corr-bar-fill" style="left:'+(r>=0?50:pct)+'%;width:'+Math.abs(pct-50)+'%;background:'+barColor+'"></span></div>' +
+          '<p class="corr-text">'+sentence+'</p>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderCorrelations(){
+    renderCorrCard("corrWeightSteps", "weight", "steps");
+    renderCorrCard("corrWeightCal", "weight", "calories");
+  }
+
+  // ---------- init ----------
+  function init(){
+    loadDB();
+    var name = getStoredName();
+    if(name){
+      userName = name;
+      updateGreeting();
+      renderToday({ autofocus:true });
+    }else{
+      onboardingEl.classList.remove("hidden");
+      setTimeout(function(){ onboardingInput.focus(); }, 200);
+      // l'écran "aujourd'hui" se construit derrière l'écran de bienvenue
+      renderToday({ autofocus:false });
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
