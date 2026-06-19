@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#C9B6E4">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon.png">
 <title>Mon suivi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,6 +103,12 @@
   .field-input-row input::-webkit-outer-spin-button,
   .field-input-row input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
   .unit{ font-size:11px; color:var(--ink-soft); font-weight:500; white-space:nowrap; }
+
+  .deficit-card{ background:var(--card); border-radius:18px; padding:14px 16px; margin-top:12px; box-shadow:var(--shadow); display:flex; align-items:center; gap:12px; border-bottom:3px solid var(--deficit); }
+  .deficit-icon{ font-size:24px; }
+  .deficit-text{ display:flex; flex-direction:column; gap:2px; }
+  .deficit-label{ font-size:11.5px; font-weight:600; color:var(--ink-soft); }
+  .deficit-value{ font-family:'Outfit'; font-weight:800; font-size:19px; color:var(--ink); }
 
   /* ---------- Calendrier ---------- */
   .calendar-overlay{ position:fixed; inset:0; z-index:180; background:rgba(20,16,30,.45); display:flex; align-items:center; justify-content:center; padding:24px; }
@@ -291,6 +299,14 @@
 
       </div>
     </section>
+
+    <section class="deficit-card" id="deficitCard">
+      <span class="deficit-icon">📉</span>
+      <div class="deficit-text">
+        <span class="deficit-label">Déficit estimé du jour</span>
+        <span class="deficit-value" id="deficitValue">—</span>
+      </div>
+    </section>
   </main>
 
   <!-- ===== CHARTS VIEW ===== -->
@@ -305,18 +321,18 @@
       <button class="pill" data-range="all">Tout</button>
     </div>
     <div id="chartWeight" class="chart-card"></div>
-    <div id="chartSteps" class="chart-card"></div>
     <div id="chartCalIn" class="chart-card"></div>
     <div id="chartDeficit" class="chart-card"></div>
+    <div id="chartSteps" class="chart-card"></div>
   </main>
 
   <!-- ===== CORRELATIONS VIEW ===== -->
   <main id="view-corr" class="view hidden">
     <h1 class="section-title">Liens entre tes données</h1>
-    <p class="section-sub">Calculé sur tous les jours où les deux données existent.</p>
+    <p class="section-sub">Le chiffre (r) va de -1 à +1 : proche de 0 = pas de lien, proche de +1 ou -1 = lien fort. Calculé sur tous les jours où les deux données existent.</p>
     <div id="corrWeightSteps" class="corr-card"></div>
     <div id="corrWeightDeficit" class="corr-card"></div>
-    <p class="disclaimer">Une corrélation indique que deux choses évoluent ensemble — pas que l'une cause l'autre. 🙂</p>
+    <p class="disclaimer">Une corrélation indique que deux choses évoluent ensemble — pas que l'une cause l'autre. 🙂 Et comme le poids reflète plusieurs jours de fond (eau, digestion...), un lien jour pour jour avec le poids est souvent plus faible que l'effet réel, qui se voit surtout sur plusieurs semaines.</p>
   </main>
 
   <nav class="tab-bar">
@@ -548,12 +564,32 @@
   var fieldSteps = document.getElementById("fieldSteps");
   var fieldCalIn = document.getElementById("fieldCalIn");
   var fieldCalOut = document.getElementById("fieldCalOut");
+  var deficitValueEl = document.getElementById("deficitValue");
   var FIELDS = [
     { key:"weight", el:fieldWeight, isFloat:true },
     { key:"steps", el:fieldSteps, isFloat:false },
     { key:"caloriesIn", el:fieldCalIn, isFloat:false },
     { key:"caloriesBurned", el:fieldCalOut, isFloat:false }
   ];
+
+  function updateTodayDeficit(){
+    var rawIn = fieldCalIn.value.trim();
+    var rawOut = fieldCalOut.value.trim();
+    if(rawIn === "" || rawOut === ""){
+      deficitValueEl.textContent = "—";
+      return;
+    }
+    var calIn = parseInt(rawIn, 10);
+    var calOut = parseInt(rawOut, 10);
+    if(isNaN(calIn) || isNaN(calOut)){
+      deficitValueEl.textContent = "—";
+      return;
+    }
+    var d = calIn - (calOut + BASE_METABOLISM);
+    deficitValueEl.textContent = (d >= 0 ? "+" : "") + d.toLocaleString("fr-FR") + " kcal";
+  }
+  fieldCalIn.addEventListener("input", updateTodayDeficit);
+  fieldCalOut.addEventListener("input", updateTodayDeficit);
 
   function commitField(field){
     var raw = field.el.value.trim();
@@ -628,6 +664,7 @@
     fieldSteps.value = entry.steps != null ? entry.steps : "";
     fieldCalIn.value = entry.caloriesIn != null ? entry.caloriesIn : "";
     fieldCalOut.value = entry.caloriesBurned != null ? entry.caloriesBurned : "";
+    updateTodayDeficit();
 
     updateSunHero();
 
@@ -1013,9 +1050,9 @@
 
   function renderCharts(){
     renderWeightChart();
-    renderChartCard("chartSteps", "steps");
     renderChartCard("chartCalIn", "caloriesIn");
     renderChartCard("chartDeficit", "deficit");
+    renderChartCard("chartSteps", "steps");
   }
 
   // ---------- corrélations ----------
@@ -1080,7 +1117,13 @@
     var r = pearson(data.xs, data.ys);
     var pct = ((r+1)/2*100);
     var barColor = r >= 0 ? defA.hex : defB.hex;
-    var sentence = "Lien "+strengthLabel(Math.abs(r))+" (r = "+r.toFixed(2)+") : "+defA.label.toLowerCase()+" et "+defB.label.toLowerCase()+(r>=0 ? " évoluent plutôt dans le même sens." : " évoluent plutôt en sens inverse.");
+    var absR = Math.abs(r);
+    var sentence;
+    if(absR < 0.3){
+      sentence = "Lien "+strengthLabel(absR)+" (r = "+r.toFixed(2)+") : pas de tendance claire entre "+defA.label.toLowerCase()+" et "+defB.label.toLowerCase()+" avec les données actuelles.";
+    }else{
+      sentence = "Lien "+strengthLabel(absR)+" (r = "+r.toFixed(2)+") : "+defA.label.toLowerCase()+" et "+defB.label.toLowerCase()+(r>=0 ? " évoluent plutôt dans le même sens." : " évoluent plutôt en sens inverse.");
+    }
 
     container.innerHTML = headHtml +
       '<div class="corr-body">' +
